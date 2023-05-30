@@ -17,8 +17,8 @@ class _LoginState extends State<Login> {
   TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
   bool hasAuthenticationCookies = false;
-  String? certReferralUrl;
-  String? wctx;
+  List<String> tokens = [];
+  bool passVis = true;
 
   @override
   void initState() {
@@ -27,51 +27,113 @@ class _LoginState extends State<Login> {
   }
 
   void getData() async {
-    setState(() {
-      isLoading = true;
-    });
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    Api api = Api();
-    List<String?> parts = await api.login();
-    certReferralUrl = parts[0];
-    wctx = parts[1];
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      tokens = prefs.getStringList('tokens') ?? [];
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void login() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      Api api = Api();
+      tokens = await api.login(emailController.text, passwordController.text);
+      await prefs.setStringList('tokens', tokens);
+    }
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: const Text('Login')),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Form(
-              key: loginFormKey,
-              autovalidateMode: AutovalidateMode.disabled,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.visiblePassword,
-                    validator: (inpEmail) {
-                      if (inpEmail == '') {
-                        return 'Please enter a username.';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      label: Text(
-                        'Email',
-                        style: TextStyle(color: Colours.lightGray),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(controller: passwordController)
-                ],
-              )),
-        ));
+        body: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : tokens.isNotEmpty
+                ? const Center(
+                    child: Text('Logged in.'),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Form(
+                        key: loginFormKey,
+                        autovalidateMode: AutovalidateMode.disabled,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextFormField(
+                              controller: emailController,
+                              keyboardType: TextInputType.visiblePassword,
+                              validator: (inpEmail) {
+                                if (inpEmail == '') {
+                                  return 'Please enter an email.';
+                                }
+                                return null;
+                              },
+                              decoration: const InputDecoration(
+                                label: Text(
+                                  'Email',
+                                  style: TextStyle(color: Colours.lightGray),
+                                ),
+                                prefixIcon: Icon(Icons.email_outlined),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: passwordController,
+                              keyboardType: TextInputType.visiblePassword,
+                              validator: (inpPw) {
+                                if (inpPw == '') {
+                                  return 'Please enter a password.';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                label: const Text(
+                                  'Password',
+                                  style: TextStyle(color: Colours.lightGray),
+                                ),
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                    icon: passVis
+                                        ? const Icon(
+                                            Icons.visibility_off_outlined)
+                                        : const Icon(Icons.visibility_outlined),
+                                    onPressed: () => setState(() {
+                                          passVis = !passVis;
+                                        })),
+                              ),
+                              obscureText: passVis,
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () async {
+                                loginFormKey.currentState!.save();
+                                if (loginFormKey.currentState!.validate()) {
+                                  login();
+                                }
+                              },
+                              child: const Text('Login'),
+                            ),
+                          ],
+                        )),
+                  ));
   }
 }
