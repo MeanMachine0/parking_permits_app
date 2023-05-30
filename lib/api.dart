@@ -3,35 +3,37 @@ import 'package:html/dom.dart';
 import 'package:dio/dio.dart';
 
 class Api {
-  static String baseUrl = 'https://permits.paysmarti.co.uk';
+  static String baseUrl = 'https://permits.paysmarti.co.uk/';
+  static String accountUrl = '${baseUrl}acct/peterborough/';
 
-  Future<List<String?>> login() async {
-    Dio dio = Dio();
-    var response = await dio.get('$baseUrl/acct/peterborough');
+  Future<List<String>> login(String email, String password) async {
+    var response = await Dio().get(accountUrl);
     String referral = response.realUri.toString();
     String wctx =
         Uri.decodeComponent(referral.split('&wctx=')[1].split('&wa')[0]);
     Map<String, String> body = {
       'returnUrl': '',
-      'email': 'tim.carter.home@gmail.com',
-      'password': 'Shopwebpa55',
+      'email': email,
+      'password': password,
     };
-    Map<String, String> headers = {'Referer': referral};
-    response = await dio.post(
-      '$baseUrl/login/peterborough/Home',
+    Map<String, String> headers = {'referer': referral};
+    response = await Dio().post(
+      '${baseUrl}login/peterborough/Home/',
       data: body,
       options: Options(
-          followRedirects: false,
-          validateStatus: (status) {
-            return status! < 500;
-          },
-          headers: headers),
+        followRedirects: false,
+        validateStatus: (status) {
+          return status! < 500;
+        },
+        contentType: Headers.formUrlEncodedContentType,
+        headers: headers,
+      ),
     );
     String fedAuthToken = response.headers['set-cookie']![0].split(';')[0];
     headers = {
-      'Cookie': fedAuthToken,
+      'cookie': fedAuthToken,
     };
-    response = await dio.get(referral,
+    response = await Dio().get(referral,
         options: Options(
           followRedirects: false,
           validateStatus: (status) {
@@ -47,20 +49,39 @@ class Api {
       'wresult': wresult,
       'wctx': wctx,
     };
-    response = await dio.post(
-      '$baseUrl/acct/peterborough',
+    response = await Dio().post(
+      accountUrl,
       data: body,
       options: Options(
-          followRedirects: true,
-          validateStatus: (status) {
-            return status! < 500;
-          }),
+        followRedirects: false,
+        validateStatus: (status) {
+          return status! < 500;
+        },
+        contentType: Headers.formUrlEncodedContentType,
+      ),
     );
-    // Unexpectedly doesn't return the following header atm:
     String fedAuthArpToken = response.headers['set-cookie']![0].split(';')[0];
+    headers = {
+      'cookie': fedAuthArpToken,
+    };
+    response = await Dio().get(
+      accountUrl,
+      options: Options(
+        followRedirects: false,
+        validateStatus: (status) {
+          return status! < 500;
+        },
+        headers: headers,
+      ),
+    );
+    List<String> cookies = response.headers['set-cookie']!;
+    String xsrfToken = cookies[0].split(';')[0];
+    String iXsrfToken = cookies[1].split(';')[0];
     return [
       fedAuthToken,
       fedAuthArpToken,
+      xsrfToken,
+      iXsrfToken,
     ];
   }
 }
