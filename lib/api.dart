@@ -1,6 +1,9 @@
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
+
+import 'models/permits_model.dart';
 
 class Api {
   static String baseUrl = 'https://permits.paysmarti.co.uk/';
@@ -83,5 +86,31 @@ class Api {
       xsrfToken,
       iXsrfToken,
     ];
+  }
+
+  Future<PermitsModel> getPermits(
+      String fedAuthArpToken, String xsrfToken, String iXsrfToken) async {
+    Map<String, dynamic> body = {
+      '\u0024type':
+          'Permits.Account.Common.Request.GetPermitsRequest, Permits.Account.Common',
+      'pagedSearchDetails': {
+        'pageSize': 1,
+        'pageNumber': 1,
+        'orderBy': 'permitNumber',
+        'isAscending': false
+      }
+    };
+    Map<String, String> headers = {
+      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
+      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+    };
+    var response = await Dio().post('${accountUrl}api/RequestProcessor/',
+        data: body,
+        options: Options(
+          headers: headers,
+        ));
+    Map<String, dynamic> responseData = response.data['items'][0];
+    PermitsModel permits = permitsModelFromJson(json.encode(responseData));
+    return permits;
   }
 }
