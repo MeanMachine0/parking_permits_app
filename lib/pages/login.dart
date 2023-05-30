@@ -50,6 +50,10 @@ class _LoginState extends State<Login> {
       Api api = Api();
       tokens = await api.login(emailController.text, passwordController.text);
       await prefs.setStringList('tokens', tokens);
+      if (tokens.isNotEmpty) {
+        // ignore: use_build_context_synchronously
+        Navigator.pop(context, true);
+      }
     }
     if (mounted) {
       setState(() {
