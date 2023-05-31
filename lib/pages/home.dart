@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parking_permits_app/models/permits_model.dart';
+import 'package:parking_permits_app/models/mini_permit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
@@ -15,7 +15,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   bool isLoading = false;
   List<String> tokens = [];
-  PermitsModel? permits;
+  List permitData = [];
+  DateTime? expiry;
 
   @override
   void initState() {
@@ -30,15 +31,31 @@ class _HomeState extends State<Home> {
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
-      permits = tokens.isEmpty
-          ? null
-          : await Api().getPermits(tokens[1], tokens[2], tokens[3]);
+      Duration buffer = const Duration(seconds: 10);
+      DateTime expiry =
+          tokens.isNotEmpty ? DateTime.parse(tokens.last) : DateTime.now();
+      permitData = tokens.isEmpty ||
+              DateTime.now().add(buffer).toUtc().isAfter(expiry)
+          ? []
+          : await Api().getMiniPermits(tokens[1], tokens[2], tokens[3], true);
+      if (permitData.isEmpty) {
+        logout();
+      }
       if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
     }
+  }
+
+  void logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    setState(() {
+      tokens.clear();
+      permitData.clear();
+    });
   }
 
   @override
@@ -49,46 +66,44 @@ class _HomeState extends State<Home> {
         title: const Text('Home'),
         actions: tokens.isEmpty
             ? [
-                ElevatedButton(
-                  onPressed: () async {
-                    setState(() {
-                      isLoading = true;
-                    });
-                    final result = await Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const Login())) ??
-                        [];
-                    if (result) {
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      setState(() {
+                        isLoading = true;
+                      });
+                      await Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => const Login())) ??
+                          [];
                       getData();
-                    }
-                  },
-                  child: const Text('Login'),
+                    },
+                    child: const Text('Login'),
+                  ),
                 ),
               ]
             : [
-                ElevatedButton(
-                  onPressed: () async {
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    await prefs.clear();
-                    setState(() {
-                      tokens = [];
-                      permits = null;
-                    });
-                  },
-                  child: const Text('Logout'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      logout();
+                    },
+                    child: const Text('Logout'),
+                  ),
                 ),
               ],
       ),
       body: Center(
         child: isLoading
             ? const CircularProgressIndicator()
-            : permits == null
+            : permitData.isEmpty
                 ? Text(
                     tokens.isEmpty
                         ? 'You are not logged in.'
                         : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
                   )
-                : Text('${permits!.vehicleVrms}'),
+                : Text('${permitData[1].vehicles[1]}'),
       ),
     );
   }
