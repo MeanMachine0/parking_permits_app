@@ -19,6 +19,7 @@ class _LoginState extends State<Login> {
   bool hasAuthenticationCookies = false;
   List<String> tokens = [];
   bool passVis = true;
+  bool displayLoginError = false;
 
   @override
   void initState() {
@@ -53,6 +54,8 @@ class _LoginState extends State<Login> {
       if (tokens.isNotEmpty) {
         // ignore: use_build_context_synchronously
         Navigator.pop(context, true);
+      } else {
+        displayLoginError = true;
       }
     }
     if (mounted) {
@@ -82,6 +85,14 @@ class _LoginState extends State<Login> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            if (displayLoginError)
+                              const Text(
+                                'Invalid username and/or password.',
+                                style: TextStyle(
+                                  color: Colours.red,
+                                ),
+                              ),
+                            if (displayLoginError) const SizedBox(height: 20),
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.visiblePassword,
@@ -118,8 +129,13 @@ class _LoginState extends State<Login> {
                                 suffixIcon: IconButton(
                                     icon: passVis
                                         ? const Icon(
-                                            Icons.visibility_off_outlined)
-                                        : const Icon(Icons.visibility_outlined),
+                                            Icons.visibility_off_outlined,
+                                            color: Colours.lightGray,
+                                          )
+                                        : const Icon(
+                                            Icons.visibility_outlined,
+                                            color: Colours.lightGray,
+                                          ),
                                     onPressed: () => setState(() {
                                           passVis = !passVis;
                                         })),
