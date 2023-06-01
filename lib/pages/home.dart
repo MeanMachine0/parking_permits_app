@@ -3,6 +3,7 @@ import 'package:parking_permits_app/models/mini_permit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
+import '../models/permit_model.dart';
 import 'login.dart';
 
 class Home extends StatefulWidget {
@@ -17,6 +18,7 @@ class _HomeState extends State<Home> {
   List<String> tokens = [];
   List permitData = [];
   DateTime? expiry;
+  Vehicle? activeVehicle = null;
 
   @override
   void initState() {
@@ -38,8 +40,12 @@ class _HomeState extends State<Home> {
               DateTime.now().add(buffer).toUtc().isAfter(expiry)
           ? []
           : await Api().getMiniPermits(tokens[1], tokens[2], tokens[3], true);
-      if (permitData.isEmpty) {
+      if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
+      } else if (permitData.isNotEmpty) {
+        activeVehicle = permitData[1]
+            .vehicles
+            .firstWhere((vehicle) => vehicle.isActive == true);
       }
       if (mounted) {
         setState(() {
@@ -94,17 +100,18 @@ class _HomeState extends State<Home> {
                 ),
               ],
       ),
-      body: Center(
-        child: isLoading
-            ? const CircularProgressIndicator()
-            : permitData.isEmpty
-                ? Text(
-                    tokens.isEmpty
-                        ? 'You are not logged in.'
-                        : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
-                  )
-                : Text('${permitData[1].vehicles[1]}'),
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : permitData.isEmpty
+              ? Center(
+                  child: Text(
+                  tokens.isEmpty
+                      ? 'You are not logged in.'
+                      : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
+                ))
+              : Center(
+                  child: Text(
+                      'Active vehicle: ${activeVehicle!.vrm}${activeVehicle!.note != '' ? " - ${activeVehicle!.note}" : ""}')),
     );
   }
 }
