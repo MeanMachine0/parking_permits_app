@@ -29,6 +29,7 @@ class _SettingsState extends State<Settings> {
     hasSettings = prefs.getBool('hasSettings');
     if (hasSettings == null) {
       await prefs.setBool('detailedView', false);
+      await prefs.setBool('hasSettings', true);
     } else {
       detailedView = prefs.getBool('detailedView')!;
     }
