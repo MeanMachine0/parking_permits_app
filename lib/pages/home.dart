@@ -20,8 +20,9 @@ class _HomeState extends State<Home> {
   List permitData = [];
   MiniPermitModel? miniPermit;
   PermitModel? permit;
+  List<MiniPermitModel> miniPermits = [];
   DateTime? expiry;
-  Vehicle? activeVehicle;
+  String? activeVehicleId;
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _HomeState extends State<Home> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool detailedView = prefs.getBool('detailedView') ?? true;
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
@@ -42,14 +44,19 @@ class _HomeState extends State<Home> {
       permitData = tokens.isEmpty ||
               DateTime.now().add(buffer).toUtc().isAfter(expiry)
           ? []
-          : await Api().getMiniPermits(tokens[1], tokens[2], tokens[3], true);
+          : await Api()
+              .getMiniPermits(tokens[1], tokens[2], tokens[3], !detailedView);
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
-      } else if (permitData.isNotEmpty) {
+      } else if (permitData.isNotEmpty && !detailedView) {
         miniPermit = permitData[0];
         permit = permitData[1];
-        activeVehicle =
-            permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
+        activeVehicleId = permit!.vehicles
+            .firstWhere((vehicle) => vehicle.isActive == true)
+            .id
+            .toString();
+      } else if (permitData.isNotEmpty) {
+        miniPermits = permitData as List<MiniPermitModel>;
       }
       if (mounted) {
         setState(() {
@@ -115,17 +122,62 @@ class _HomeState extends State<Home> {
               : permit != null
                   ? Padding(
                       padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      child: ListView.builder(
-                        itemCount: permit!.vehicles.length,
-                        itemBuilder: (content, index) {
-                          return VehicleCard(vehicle: permit!.vehicles[index]);
-                        },
+                      child: Column(
+                        children: [
+                          DropdownButtonFormField(
+                            icon: const Icon(Icons.check),
+                            decoration: const InputDecoration(
+                              labelText: 'Active Vehicle',
+                            ),
+                            value: activeVehicleId,
+                            items: miniPermit!.vehicleVrms
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: permit!.vehicles
+                                    .firstWhere(
+                                        (vehicle) => vehicle.vrm == value)
+                                    .id
+                                    .toString(),
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newActiveVehicleId) async {
+                              // Makes the api request successfully, but other stuff is not working yet.
+                              setState(() {
+                                isLoading = true;
+                              });
+                              await Api().setActiveVehicle(
+                                permit!.id.toString(),
+                                newActiveVehicleId!,
+                                tokens[1],
+                                tokens[2],
+                                tokens[3],
+                              );
+                              if (mounted) {
+                                setState(() {
+                                  activeVehicleId = newActiveVehicleId;
+                                  isLoading = false;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: permit!.vehicles.length,
+                              itemBuilder: (content, index) {
+                                return VehicleCard(
+                                    vehicle: permit!.vehicles[index]);
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     )
-                  // Undecided:
                   : ListView.builder(
-                      itemCount: miniPermit!.vehicleVrms.length,
+                      itemCount: miniPermits.length,
                       itemBuilder: (content, index) {
+                        // Coming soon:
                         return null;
                       },
                     ),
