@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
 import '../models/permit_model.dart';
+import '../widgets/vehicle_card.dart';
 import 'login.dart';
 
 class Home extends StatefulWidget {
@@ -109,9 +110,7 @@ class _HomeState extends State<Home> {
                       ? 'You are not logged in.'
                       : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
                 ))
-              : Center(
-                  child: Text(
-                      'Active vehicle: ${activeVehicle!.vrm}${activeVehicle!.note != '' ? " - ${activeVehicle!.note}" : ""}')),
+              : Center(child: VehicleCard(vehicle: activeVehicle!)),
     );
   }
 }
