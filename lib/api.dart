@@ -1,6 +1,7 @@
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'models/mini_permit_model.dart';
@@ -148,7 +149,13 @@ class Api {
     };
     var response = await Dio()
         .post(processorUrl, data: body, options: Options(headers: headers));
+    PermitModel permit =
+        permitModelFromJson(json.encode(response.data['permit']));
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    return permitModelFromJson(json.encode(response.data['permit']));
+    for (Vehicle vehicle in permit.vehicles) {
+      vehicle.note = prefs.getString(vehicle.id.toString()) ?? '';
+    }
+    return permit;
   }
 }
