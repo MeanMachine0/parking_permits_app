@@ -80,6 +80,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
+        scrolledUnderElevation: 0,
         actions: tokens.isEmpty
             ? [
                 Padding(
