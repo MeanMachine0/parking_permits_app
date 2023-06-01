@@ -128,7 +128,7 @@ class Api {
           await getPermit(permitId, fedAuthArpToken, xsrfToken, iXsrfToken);
       return [miniPermit, permit];
     }
-    List<Map<String, dynamic>> miniPermitsData = response.data['items'];
+    List<dynamic> miniPermitsData = response.data['items'];
     List<MiniPermitModel> miniPermits = [];
     for (Map<String, dynamic> miniPermit in miniPermitsData) {
       miniPermits.add(miniPermitModelFromJson(json.encode(miniPermit)));
@@ -157,5 +157,26 @@ class Api {
       vehicle.note = prefs.getString(vehicle.id.toString()) ?? '';
     }
     return permit;
+  }
+
+  Future<void> setActiveVehicle(String permitId, String newVehicleId,
+      String fedAuthArpToken, String xsrfToken, String iXsrfToken) async {
+    Map<String, String> headers = {
+      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
+      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+    };
+    Map<String, String> body = {
+      "\u0024type":
+          "Permits.Account.Common.Request.ChangeActiveVehicleRequest, Permits.Account.Common",
+      "permitId": permitId,
+      "vehicleId": newVehicleId
+    };
+    Dio().post(
+      processorUrl,
+      data: body,
+      options: Options(
+        headers: headers,
+      ),
+    );
   }
 }
