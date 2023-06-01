@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +22,7 @@ class VehicleCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
-                      selectionHeightStyle: BoxHeightStyle.max,
+                      decoration: const InputDecoration(labelText: 'Note'),
                       controller: TextEditingController(text: _vehicle.note),
                       onSubmitted: (newNote) async {
                         SharedPreferences prefs =
@@ -41,7 +39,7 @@ class VehicleCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    _vehicle.isActive ? 'Active' : 'Inactive',
+                    _vehicle.id.toString(),
                   ),
                 ],
               )
