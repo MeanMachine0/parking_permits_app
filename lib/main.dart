@@ -23,23 +23,23 @@ class MyApp extends StatelessWidget {
       supportedLocales: const [Locale('en', 'GB'), Locale('en', 'US')],
       locale: const Locale('en', 'GB'),
       theme: ThemeData(
-        colorSchemeSeed: Colours.deepDarkGray,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colours.deepGray,
-        navigationBarTheme:
-            const NavigationBarThemeData(indicatorColor: Colors.transparent),
-        cardTheme: const CardTheme(
-          color: Colours.darkGray,
-          elevation: 2,
-        ),
-        appBarTheme: const AppBarTheme(
-            backgroundColor: Colours.deepGray, toolbarHeight: 60),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Colours.deepDarkGray),
-        progressIndicatorTheme:
-            const ProgressIndicatorThemeData(color: Colours.lightBlue),
-      ),
+          colorSchemeSeed: Colours.deepDarkGray,
+          brightness: Brightness.dark,
+          useMaterial3: true,
+          scaffoldBackgroundColor: Colours.deepGray,
+          navigationBarTheme:
+              const NavigationBarThemeData(indicatorColor: Colors.transparent),
+          cardTheme: const CardTheme(
+            color: Colours.darkGray,
+            elevation: 2,
+          ),
+          appBarTheme: const AppBarTheme(
+              backgroundColor: Colours.deepGray, toolbarHeight: 60),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              backgroundColor: Colours.deepDarkGray),
+          progressIndicatorTheme:
+              const ProgressIndicatorThemeData(color: Colours.lightBlue),
+          listTileTheme: const ListTileThemeData(tileColor: Colours.darkGray)),
       home: const Base(),
     );
   }
