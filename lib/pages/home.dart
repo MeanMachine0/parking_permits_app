@@ -18,8 +18,10 @@ class _HomeState extends State<Home> {
   bool isLoading = false;
   List<String> tokens = [];
   List permitData = [];
+  MiniPermitModel? miniPermit;
+  PermitModel? permit;
   DateTime? expiry;
-  Vehicle? activeVehicle = null;
+  Vehicle? activeVehicle;
 
   @override
   void initState() {
@@ -34,7 +36,7 @@ class _HomeState extends State<Home> {
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
-      Duration buffer = const Duration(seconds: 10);
+      Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
           tokens.isNotEmpty ? DateTime.parse(tokens.last) : DateTime.now();
       permitData = tokens.isEmpty ||
@@ -44,9 +46,10 @@ class _HomeState extends State<Home> {
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
       } else if (permitData.isNotEmpty) {
-        activeVehicle = permitData[1]
-            .vehicles
-            .firstWhere((vehicle) => vehicle.isActive == true);
+        miniPermit = permitData[0];
+        permit = permitData[1];
+        activeVehicle =
+            permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
       }
       if (mounted) {
         setState(() {
@@ -58,7 +61,7 @@ class _HomeState extends State<Home> {
 
   void logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove('tokens');
     setState(() {
       tokens.clear();
       permitData.clear();
@@ -69,7 +72,6 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        scrolledUnderElevation: 0,
         title: const Text('Home'),
         actions: tokens.isEmpty
             ? [
@@ -110,7 +112,23 @@ class _HomeState extends State<Home> {
                       ? 'You are not logged in.'
                       : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
                 ))
-              : Center(child: VehicleCard(vehicle: activeVehicle!)),
+              : permit != null
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                      child: ListView.builder(
+                        itemCount: permit!.vehicles.length,
+                        itemBuilder: (content, index) {
+                          return VehicleCard(vehicle: permit!.vehicles[index]);
+                        },
+                      ),
+                    )
+                  // Undecided:
+                  : ListView.builder(
+                      itemCount: miniPermit!.vehicleVrms.length,
+                      itemBuilder: (content, index) {
+                        return null;
+                      },
+                    ),
     );
   }
 }
