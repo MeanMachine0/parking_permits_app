@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants.dart';
 import 'home.dart';
-import 'login.dart';
+import 'settings.dart';
 
 class Base extends StatefulWidget {
   const Base({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class _BaseState extends State<Base> {
   int _selectedIndex = 0;
   static const List<Widget> pages = <Widget>[
     Home(),
-    Login(),
+    Settings(),
   ];
 
   @override
@@ -37,9 +37,9 @@ class _BaseState extends State<Base> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Login',
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),
