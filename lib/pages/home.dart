@@ -22,7 +22,7 @@ class _HomeState extends State<Home> {
   PermitModel? permit;
   List<MiniPermitModel> miniPermits = [];
   DateTime? expiry;
-  String? activeVehicleId;
+  Vehicle? activeVehicle;
 
   @override
   void initState() {
@@ -51,10 +51,8 @@ class _HomeState extends State<Home> {
       } else if (permitData.isNotEmpty && !detailedView) {
         miniPermit = permitData[0];
         permit = permitData[1];
-        activeVehicleId = permit!.vehicles
-            .firstWhere((vehicle) => vehicle.isActive == true)
-            .id
-            .toString();
+        activeVehicle =
+            permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
       } else if (permitData.isNotEmpty) {
         miniPermits = permitData as List<MiniPermitModel>;
       }
@@ -125,42 +123,27 @@ class _HomeState extends State<Home> {
                       padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                       child: Column(
                         children: [
-                          DropdownButtonFormField(
-                            icon: const Icon(Icons.check),
-                            decoration: const InputDecoration(
-                              labelText: 'Active Vehicle',
-                            ),
-                            value: activeVehicleId,
-                            items: miniPermit!.vehicleVrms
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: permit!.vehicles
-                                    .firstWhere(
-                                        (vehicle) => vehicle.vrm == value)
-                                    .id
-                                    .toString(),
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newActiveVehicleId) async {
-                              setState(() {
-                                isLoading = true;
-                              });
-                              await Api().setActiveVehicle(
-                                permit!.id.toString(),
-                                newActiveVehicleId!,
-                                tokens[1],
-                                tokens[2],
-                                tokens[3],
-                              );
-                              if (mounted) {
-                                setState(() {
-                                  activeVehicleId = newActiveVehicleId;
-                                  isLoading = false;
-                                });
-                              }
-                            },
-                          ),
+                          Text(
+                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}'),
+                          //   onChanged: (newActiveVehicleId) async {
+                          //     setState(() {
+                          //       isLoading = true;
+                          //     });
+                          //     await Api().setActiveVehicle(
+                          //       permit!.id.toString(),
+                          //       newActiveVehicleId!,
+                          //       tokens[1],
+                          //       tokens[2],
+                          //       tokens[3],
+                          //     );
+                          //     if (mounted) {
+                          //       setState(() {
+                          //         activeVehicleId = newActiveVehicleId;
+                          //         isLoading = false;
+                          //       });
+                          //     }
+                          //   },
+                          // ),
                           const SizedBox(height: 10),
                           Expanded(
                             child: ListView.builder(
