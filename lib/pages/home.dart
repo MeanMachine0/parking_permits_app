@@ -208,7 +208,7 @@ class HomeState extends State<Home> {
                       itemCount: miniPermits.length,
                       itemBuilder: (content, index) {
                         // Coming soon:
-                        return null;
+                        return const SizedBox.shrink();
                       },
                     ),
     );
