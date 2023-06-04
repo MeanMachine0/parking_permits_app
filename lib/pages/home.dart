@@ -102,6 +102,25 @@ class HomeState extends State<Home> {
     });
   }
 
+  void editVehicleVrmCallback(Vehicle oldVehicle, String newVehicleVrm) async {
+    setState(() {
+      isLoading = true;
+    });
+    await Api().editVehicleVrm(
+      permit!.id.toString(),
+      oldVehicle.id.toString(),
+      newVehicleVrm,
+      tokens[1],
+      tokens[2],
+      tokens[3],
+    );
+    oldVehicle.vrm = newVehicleVrm;
+    selectedIndex = -1;
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,6 +185,7 @@ class HomeState extends State<Home> {
                                       updateVehicleNote:
                                           updateVehicleNoteCallback,
                                       assignPermit: assignPermitCallback,
+                                      editVehicleVrm: editVehicleVrmCallback,
                                     ),
                                     onTap: () {
                                       if (selectedIndex == index) {

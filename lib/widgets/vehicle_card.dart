@@ -9,15 +9,18 @@ class VehicleCard extends StatelessWidget {
     required bool isSelected,
     required Function(Vehicle, String) updateVehicleNote,
     required Function(Vehicle) assignPermit,
+    required Function(Vehicle, String) editVehicleVrm,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
         _updateVehicleNote = updateVehicleNote,
-        _assignPermit = assignPermit;
+        _assignPermit = assignPermit,
+        _editVehicleVrm = editVehicleVrm;
 
   final Vehicle _vehicle;
   final bool _isSelected;
   final Function(Vehicle, String) _updateVehicleNote;
   final Function(Vehicle) _assignPermit;
+  final Function(Vehicle, String) _editVehicleVrm;
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +32,14 @@ class VehicleCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(_vehicle.vrm,
-                      style: const TextStyle(
-                        fontFamily: 'Courier New',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      )),
+                  Text(
+                    _vehicle.vrm,
+                    style: const TextStyle(
+                      fontFamily: 'Courier New',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                   if (_vehicle.note != '') Text(' - ${_vehicle.note}'),
                   Expanded(child: Container()),
                   if (_vehicle.isActive)
@@ -61,6 +66,21 @@ class VehicleCard extends StatelessWidget {
                         controller: TextEditingController(text: _vehicle.note),
                         onSubmitted: (newNote) async {
                           _updateVehicleNote(_vehicle, newNote);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              if (_isSelected)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration:
+                            const InputDecoration(labelText: 'Edit vrm'),
+                        controller: TextEditingController(text: _vehicle.vrm),
+                        onSubmitted: (newVrm) async {
+                          _editVehicleVrm(_vehicle, newVrm);
                         },
                       ),
                     ),
