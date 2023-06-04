@@ -36,7 +36,6 @@ class VehicleCard extends StatelessWidget {
                         fontSize: 18,
                       )),
                   if (_vehicle.note != '') Text(' - ${_vehicle.note}'),
-                  if (_vehicle.isActive) const SizedBox(width: 4),
                   Expanded(child: Container()),
                   if (_vehicle.isActive)
                     Container(
