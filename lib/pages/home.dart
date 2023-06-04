@@ -82,6 +82,25 @@ class HomeState extends State<Home> {
     });
   }
 
+  void setActiveVehicleCallback(Vehicle newActiveVehicle) async {
+    setState(() {
+      isLoading = true;
+    });
+    activeVehicle!.isActive = false;
+    await Api().setActiveVehicle(
+      permit!.id.toString(),
+      newActiveVehicle.id.toString(),
+      tokens[1],
+      tokens[2],
+      tokens[3],
+    );
+    activeVehicle = newActiveVehicle;
+    setState(() {
+      activeVehicle!.isActive = true;
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,6 +182,8 @@ class HomeState extends State<Home> {
                                       vehicle: permit!.vehicles[index],
                                       isSelected: index == selectedIndex,
                                       func: updateVehicleNoteCallback,
+                                      setActiveVehicle:
+                                          setActiveVehicleCallback,
                                     ),
                                     onTap: () {
                                       setState(() {

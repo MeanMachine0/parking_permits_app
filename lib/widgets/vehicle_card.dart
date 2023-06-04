@@ -8,13 +8,16 @@ class VehicleCard extends StatelessWidget {
     required Vehicle vehicle,
     required bool isSelected,
     required Function(Vehicle, String) func,
+    required Function(Vehicle) setActiveVehicle,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
-        _func = func;
+        _func = func,
+        _setActiveVehicle = setActiveVehicle;
 
   final Vehicle _vehicle;
   final bool _isSelected;
   final Function(Vehicle, String) _func;
+  final Function(Vehicle) _setActiveVehicle;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +64,21 @@ class VehicleCard extends StatelessWidget {
                     ),
                   ),
                 ]),
+              if (_isSelected && !_vehicle.isActive)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          _setActiveVehicle(_vehicle);
+                        },
+                        child: const Text('Assign to permit'),
+                      ),
+                    ],
+                  ),
+                )
               // Row(
               //   children: [
               //     Text(
