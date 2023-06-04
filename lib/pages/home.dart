@@ -143,7 +143,6 @@ class _HomeState extends State<Home> {
                               );
                             }).toList(),
                             onChanged: (newActiveVehicleId) async {
-                              // Makes the api request successfully, but other stuff is not working yet.
                               setState(() {
                                 isLoading = true;
                               });
