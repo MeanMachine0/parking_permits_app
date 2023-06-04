@@ -82,12 +82,12 @@ class HomeState extends State<Home> {
     });
   }
 
-  void assignToPermitCallback(Vehicle newActiveVehicle) async {
+  void assignPermitCallback(Vehicle newActiveVehicle) async {
     setState(() {
       isLoading = true;
     });
     activeVehicle!.isActive = false;
-    await Api().assignToPermit(
+    await Api().assignPermit(
       permit!.id.toString(),
       newActiveVehicle.id.toString(),
       tokens[1],
@@ -165,7 +165,7 @@ class HomeState extends State<Home> {
                                       isSelected: index == selectedIndex,
                                       updateVehicleNote:
                                           updateVehicleNoteCallback,
-                                      assignToPermit: assignToPermitCallback,
+                                      assignPermit: assignPermitCallback,
                                     ),
                                     onTap: () {
                                       if (selectedIndex == index) {

@@ -8,20 +8,21 @@ class VehicleCard extends StatelessWidget {
     required Vehicle vehicle,
     required bool isSelected,
     required Function(Vehicle, String) updateVehicleNote,
-    required Function(Vehicle) assignToPermit,
+    required Function(Vehicle) assignPermit,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
         _updateVehicleNote = updateVehicleNote,
-        _assignToPermit = assignToPermit;
+        _assignPermit = assignPermit;
 
   final Vehicle _vehicle;
   final bool _isSelected;
   final Function(Vehicle, String) _updateVehicleNote;
-  final Function(Vehicle) _assignToPermit;
+  final Function(Vehicle) _assignPermit;
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      // elevation: 3,
       child: Padding(
           padding: const EdgeInsets.all(10),
           child: Column(
@@ -74,7 +75,7 @@ class VehicleCard extends StatelessWidget {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          _assignToPermit(_vehicle);
+                          _assignPermit(_vehicle);
                         },
                         child: const Text('Assign to permit'),
                       ),

@@ -159,7 +159,7 @@ class Api {
     return permit;
   }
 
-  Future<void> assignToPermit(String permitId, String newVehicleId,
+  Future<void> assignPermit(String permitId, String newVehicleId,
       String fedAuthArpToken, String xsrfToken, String iXsrfToken) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
