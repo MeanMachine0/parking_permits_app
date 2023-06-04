@@ -95,6 +95,7 @@ class HomeState extends State<Home> {
       tokens[3],
     );
     activeVehicle = newActiveVehicle;
+    selectedIndex = -1;
     setState(() {
       activeVehicle!.isActive = true;
       isLoading = false;
