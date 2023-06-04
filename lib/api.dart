@@ -171,7 +171,7 @@ class Api {
       "permitId": permitId,
       "vehicleId": newVehicleId
     };
-    Dio().post(
+    await Dio().post(
       processorUrl,
       data: body,
       options: Options(
