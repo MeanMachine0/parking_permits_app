@@ -154,25 +154,6 @@ class HomeState extends State<Home> {
                         children: [
                           Text(
                               'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}'),
-                          //   onChanged: (newActiveVehicleId) async {
-                          //     setState(() {
-                          //       isLoading = true;
-                          //     });
-                          //     await Api().setActiveVehicle(
-                          //       permit!.id.toString(),
-                          //       newActiveVehicleId!,
-                          //       tokens[1],
-                          //       tokens[2],
-                          //       tokens[3],
-                          //     );
-                          //     if (mounted) {
-                          //       setState(() {
-                          //         activeVehicleId = newActiveVehicleId;
-                          //         isLoading = false;
-                          //       });
-                          //     }
-                          //   },
-                          // ),
                           const SizedBox(height: 10),
                           Expanded(
                             child: ListView.builder(
@@ -187,9 +168,15 @@ class HomeState extends State<Home> {
                                       assignToPermit: assignToPermitCallback,
                                     ),
                                     onTap: () {
-                                      setState(() {
-                                        selectedIndex = index;
-                                      });
+                                      if (selectedIndex == index) {
+                                        setState(() {
+                                          selectedIndex = -1;
+                                        });
+                                      } else {
+                                        setState(() {
+                                          selectedIndex = index;
+                                        });
+                                      }
                                     });
                               },
                             ),
