@@ -1,18 +1,20 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../constants.dart';
 import '../models/permit_model.dart';
 
 class VehicleCard extends StatelessWidget {
   const VehicleCard({
     super.key,
     required Vehicle vehicle,
-  }) : _vehicle = vehicle;
+    required bool isSelected,
+    required Function(Vehicle, String) func,
+  })  : _vehicle = vehicle,
+        _isSelected = isSelected,
+        _func = func;
 
   final Vehicle _vehicle;
+  final bool _isSelected;
+  final Function(Vehicle, String) _func;
 
   @override
   Widget build(BuildContext context) {
@@ -21,21 +23,6 @@ class VehicleCard extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           child: Column(
             children: [
-              // Row(
-              //   children: [
-              //     Expanded(
-              //       child: TextField(
-              //         decoration: const InputDecoration(labelText: 'Note'),
-              //         controller: TextEditingController(text: _vehicle.note),
-              //         onSubmitted: (newNote) async {
-              //           SharedPreferences prefs =
-              //               await SharedPreferences.getInstance();
-              //           await prefs.setString(_vehicle.id.toString(), newNote);
-              //         },
-              //       ),
-              //     )
-              //   ],
-              // ),
               Row(
                 children: [
                   Text(_vehicle.vrm,
@@ -62,6 +49,18 @@ class VehicleCard extends StatelessWidget {
                     )
                 ],
               ),
+              if (_isSelected)
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: const InputDecoration(labelText: 'Note'),
+                      controller: TextEditingController(text: _vehicle.note),
+                      onSubmitted: (newNote) async {
+                        _func(_vehicle, newNote);
+                      },
+                    ),
+                  ),
+                ]),
               // Row(
               //   children: [
               //     Text(
