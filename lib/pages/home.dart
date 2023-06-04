@@ -82,12 +82,12 @@ class HomeState extends State<Home> {
     });
   }
 
-  void setActiveVehicleCallback(Vehicle newActiveVehicle) async {
+  void assignToPermitCallback(Vehicle newActiveVehicle) async {
     setState(() {
       isLoading = true;
     });
     activeVehicle!.isActive = false;
-    await Api().setActiveVehicle(
+    await Api().assignToPermit(
       permit!.id.toString(),
       newActiveVehicle.id.toString(),
       tokens[1],
@@ -181,9 +181,9 @@ class HomeState extends State<Home> {
                                     child: VehicleCard(
                                       vehicle: permit!.vehicles[index],
                                       isSelected: index == selectedIndex,
-                                      func: updateVehicleNoteCallback,
-                                      setActiveVehicle:
-                                          setActiveVehicleCallback,
+                                      updateVehicleNote:
+                                          updateVehicleNoteCallback,
+                                      assignToPermit: assignToPermitCallback,
                                     ),
                                     onTap: () {
                                       setState(() {

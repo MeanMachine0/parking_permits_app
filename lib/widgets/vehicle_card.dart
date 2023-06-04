@@ -7,17 +7,17 @@ class VehicleCard extends StatelessWidget {
     super.key,
     required Vehicle vehicle,
     required bool isSelected,
-    required Function(Vehicle, String) func,
-    required Function(Vehicle) setActiveVehicle,
+    required Function(Vehicle, String) updateVehicleNote,
+    required Function(Vehicle) assignToPermit,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
-        _func = func,
-        _setActiveVehicle = setActiveVehicle;
+        _updateVehicleNote = updateVehicleNote,
+        _assignToPermit = assignToPermit;
 
   final Vehicle _vehicle;
   final bool _isSelected;
-  final Function(Vehicle, String) _func;
-  final Function(Vehicle) _setActiveVehicle;
+  final Function(Vehicle, String) _updateVehicleNote;
+  final Function(Vehicle) _assignToPermit;
 
   @override
   Widget build(BuildContext context) {
@@ -53,17 +53,19 @@ class VehicleCard extends StatelessWidget {
                 ],
               ),
               if (_isSelected)
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(labelText: 'Note'),
-                      controller: TextEditingController(text: _vehicle.note),
-                      onSubmitted: (newNote) async {
-                        _func(_vehicle, newNote);
-                      },
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(labelText: 'Note'),
+                        controller: TextEditingController(text: _vehicle.note),
+                        onSubmitted: (newNote) async {
+                          _updateVehicleNote(_vehicle, newNote);
+                        },
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               if (_isSelected && !_vehicle.isActive)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -72,20 +74,13 @@ class VehicleCard extends StatelessWidget {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          _setActiveVehicle(_vehicle);
+                          _assignToPermit(_vehicle);
                         },
                         child: const Text('Assign to permit'),
                       ),
                     ],
                   ),
-                )
-              // Row(
-              //   children: [
-              //     Text(
-              //       _vehicle.id.toString(),
-              //     ),
-              //   ],
-              // ),
+                ),
             ],
           )),
     );
