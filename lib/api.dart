@@ -179,4 +179,50 @@ class Api {
       ),
     );
   }
+
+  Future<void> editVehicleVrm(
+      String permitId,
+      String oldVehicleId,
+      String newVehicleVrm,
+      String fedAuthArpToken,
+      String xsrfToken,
+      String iXsrfToken) async {
+    Map<String, String> headers = {
+      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
+      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+    };
+    List<Map<String, dynamic>> bodies = [
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.StartPermitVehicleEditRequest, Permits.Account.Common",
+        "permitId": permitId,
+        "vehicleId": oldVehicleId
+      },
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.ValidateVrmAccountRequest, Permits.Account.Common",
+        "vrm": newVehicleVrm
+      },
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.SavePermitVehicleChangesRequest, Permits.Account.Common",
+        "permitId": permitId,
+        "vehicle": {
+          "\u0024type":
+              "Permits.Infrastructure.Model.PermitVehicleEditModel, Permits.Infrastructure",
+          "id": oldVehicleId,
+          "vrm": newVehicleVrm
+        }
+      }
+    ];
+    for (Map<String, dynamic> body in bodies) {
+      await Dio().post(
+        processorUrl,
+        data: body,
+        options: Options(
+          headers: headers,
+        ),
+      );
+    }
+  }
 }
