@@ -8,10 +8,10 @@ class Base extends StatefulWidget {
   const Base({Key? key}) : super(key: key);
 
   @override
-  _BaseState createState() => _BaseState();
+  BaseState createState() => BaseState();
 }
 
-class _BaseState extends State<Base> {
+class BaseState extends State<Base> {
   int _selectedIndex = 0;
   static const List<Widget> pages = <Widget>[
     Home(),
