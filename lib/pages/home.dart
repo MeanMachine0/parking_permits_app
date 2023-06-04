@@ -23,6 +23,7 @@ class _HomeState extends State<Home> {
   List<MiniPermitModel> miniPermits = [];
   DateTime? expiry;
   Vehicle? activeVehicle;
+  int selectedIndex = -1;
 
   @override
   void initState() {
@@ -70,6 +71,14 @@ class _HomeState extends State<Home> {
     setState(() {
       tokens.clear();
       permitData.clear();
+    });
+  }
+
+  void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(vehicle.id.toString(), newNote);
+    setState(() {
+      vehicle.note = newNote;
     });
   }
 
@@ -149,8 +158,17 @@ class _HomeState extends State<Home> {
                             child: ListView.builder(
                               itemCount: permit!.vehicles.length,
                               itemBuilder: (content, index) {
-                                return VehicleCard(
-                                    vehicle: permit!.vehicles[index]);
+                                return GestureDetector(
+                                    child: VehicleCard(
+                                      vehicle: permit!.vehicles[index],
+                                      isSelected: index == selectedIndex,
+                                      func: updateVehicleNoteCallback,
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        selectedIndex = index;
+                                      });
+                                    });
                               },
                             ),
                           ),
