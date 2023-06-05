@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:parking_permits_app/models/mini_permit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -188,61 +189,83 @@ class HomeState extends State<Home> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : permitData.isEmpty
-              ? Center(
-                  child: Text(
-                    tokens.isEmpty
-                        ? 'You are not logged in.'
-                        : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
+              ? Animate(
+                  effects: const [
+                    FadeEffect(),
+                  ],
+                  child: Center(
+                    child: Text(
+                      tokens.isEmpty
+                          ? 'You are not logged in.'
+                          : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
+                    ),
                   ),
                 )
               : failure
-                  ? const Center(
-                      child: Text(
-                        'You have no permits to view or an error occurred whilst attempting to retreive them.',
-                        textAlign: TextAlign.center,
+                  ? Animate(
+                      effects: const [
+                        FadeEffect(),
+                      ],
+                      child: const Center(
+                        child: Text(
+                          'You have no permits to view or an error occurred whilst attempting to retreive them.',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     )
                   : permit != null
                       ? Padding(
                           padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 10),
-                              Expanded(
-                                child: ListView.builder(
-                                  itemCount: permit!.vehicles.length,
-                                  itemBuilder: (content, index) {
-                                    return GestureDetector(
-                                        child: VehicleCard(
-                                          vehicle: permit!.vehicles[index],
-                                          isSelected: index == selectedIndex,
-                                          updateVehicleNote:
-                                              updateVehicleNoteCallback,
-                                          assignPermit: assignPermitCallback,
-                                          editVehicleVrm:
-                                              editVehicleVrmCallback,
-                                          toggleVehicleIsFavourite:
-                                              toggleVehicleIsFavouriteCallback,
-                                        ),
-                                        onTap: () {
-                                          if (selectedIndex == index) {
-                                            setState(() {
-                                              selectedIndex = -1;
-                                            });
-                                          } else {
-                                            setState(() {
-                                              selectedIndex = index;
-                                            });
-                                          }
-                                        });
-                                  },
-                                ),
-                              ),
+                          child: Animate(
+                            effects: const [
+                              FadeEffect(),
                             ],
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: permit!.vehicles.length,
+                                    itemBuilder: (content, index) {
+                                      return Animate(
+                                        effects: const [
+                                          SlideEffect(),
+                                        ],
+                                        child: GestureDetector(
+                                            child: VehicleCard(
+                                              vehicle: permit!.vehicles[index],
+                                              isSelected:
+                                                  index == selectedIndex,
+                                              updateVehicleNote:
+                                                  updateVehicleNoteCallback,
+                                              assignPermit:
+                                                  assignPermitCallback,
+                                              editVehicleVrm:
+                                                  editVehicleVrmCallback,
+                                              toggleVehicleIsFavourite:
+                                                  toggleVehicleIsFavouriteCallback,
+                                            ),
+                                            onTap: () {
+                                              if (selectedIndex == index) {
+                                                setState(() {
+                                                  selectedIndex = -1;
+                                                });
+                                              } else {
+                                                setState(() {
+                                                  selectedIndex = index;
+                                                });
+                                              }
+                                            }),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         )
                       : ListView.builder(

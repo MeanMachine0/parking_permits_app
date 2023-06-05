@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:parking_permits_app/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,83 +78,88 @@ class LoginState extends State<Login> {
                 ? const Center(
                     child: Text('Logged in.'),
                   )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Form(
-                        key: loginFormKey,
-                        autovalidateMode: AutovalidateMode.disabled,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (displayLoginError)
-                              const Text(
-                                'Invalid username and/or password.',
-                                style: TextStyle(
-                                  color: Colours.red,
+                : Animate(
+                    effects: const [
+                      FadeEffect(),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Form(
+                          key: loginFormKey,
+                          autovalidateMode: AutovalidateMode.disabled,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (displayLoginError)
+                                const Text(
+                                  'Invalid username and/or password.',
+                                  style: TextStyle(
+                                    color: Colours.red,
+                                  ),
+                                ),
+                              if (displayLoginError) const SizedBox(height: 20),
+                              TextFormField(
+                                controller: emailController,
+                                keyboardType: TextInputType.visiblePassword,
+                                validator: (inpEmail) {
+                                  if (inpEmail == '') {
+                                    return 'Please enter an email.';
+                                  }
+                                  return null;
+                                },
+                                decoration: const InputDecoration(
+                                  label: Text(
+                                    'Email',
+                                    style: TextStyle(color: Colours.lightGray),
+                                  ),
+                                  prefixIcon: Icon(Icons.email_outlined),
                                 ),
                               ),
-                            if (displayLoginError) const SizedBox(height: 20),
-                            TextFormField(
-                              controller: emailController,
-                              keyboardType: TextInputType.visiblePassword,
-                              validator: (inpEmail) {
-                                if (inpEmail == '') {
-                                  return 'Please enter an email.';
-                                }
-                                return null;
-                              },
-                              decoration: const InputDecoration(
-                                label: Text(
-                                  'Email',
-                                  style: TextStyle(color: Colours.lightGray),
+                              const SizedBox(height: 20),
+                              TextFormField(
+                                controller: passwordController,
+                                keyboardType: TextInputType.visiblePassword,
+                                validator: (inpPw) {
+                                  if (inpPw == '') {
+                                    return 'Please enter a password.';
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  label: const Text(
+                                    'Password',
+                                    style: TextStyle(color: Colours.lightGray),
+                                  ),
+                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  suffixIcon: IconButton(
+                                      icon: passVis
+                                          ? const Icon(
+                                              Icons.visibility_off_outlined,
+                                              color: Colours.lightGray,
+                                            )
+                                          : const Icon(
+                                              Icons.visibility_outlined,
+                                              color: Colours.lightGray,
+                                            ),
+                                      onPressed: () => setState(() {
+                                            passVis = !passVis;
+                                          })),
                                 ),
-                                prefixIcon: Icon(Icons.email_outlined),
+                                obscureText: passVis,
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: passwordController,
-                              keyboardType: TextInputType.visiblePassword,
-                              validator: (inpPw) {
-                                if (inpPw == '') {
-                                  return 'Please enter a password.';
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                label: const Text(
-                                  'Password',
-                                  style: TextStyle(color: Colours.lightGray),
-                                ),
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                    icon: passVis
-                                        ? const Icon(
-                                            Icons.visibility_off_outlined,
-                                            color: Colours.lightGray,
-                                          )
-                                        : const Icon(
-                                            Icons.visibility_outlined,
-                                            color: Colours.lightGray,
-                                          ),
-                                    onPressed: () => setState(() {
-                                          passVis = !passVis;
-                                        })),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  loginFormKey.currentState!.save();
+                                  if (loginFormKey.currentState!.validate()) {
+                                    login();
+                                  }
+                                },
+                                child: const Text('Login'),
                               ),
-                              obscureText: passVis,
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () async {
-                                loginFormKey.currentState!.save();
-                                if (loginFormKey.currentState!.validate()) {
-                                  login();
-                                }
-                              },
-                              child: const Text('Login'),
-                            ),
-                          ],
-                        )),
+                            ],
+                          )),
+                    ),
                   ));
   }
 }

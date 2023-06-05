@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
@@ -45,34 +46,39 @@ class SettingsState extends State<Settings> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                CheckboxListTile(
-                  title: const Text('Detailed View'),
-                  value: detailedView,
-                  onChanged: (newValue) async {
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    prefs.setBool('detailedView', newValue!);
-                    setState(() {
-                      detailedView = !detailedView!;
-                    });
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: ElevatedButton(
-                    onPressed: () async {
+          : Animate(
+              effects: const [
+                FadeEffect(),
+              ],
+              child: Column(
+                children: [
+                  CheckboxListTile(
+                    title: const Text('Detailed View'),
+                    value: detailedView,
+                    onChanged: (newValue) async {
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-                      await prefs.clear();
+                      prefs.setBool('detailedView', newValue!);
+                      setState(() {
+                        detailedView = !detailedView!;
+                      });
                     },
-                    child: const Text(
-                      'Delete user data',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.clear();
+                      },
+                      child: const Text(
+                        'Delete user data',
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }
