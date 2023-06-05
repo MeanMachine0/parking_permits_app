@@ -15,7 +15,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false;
+  bool isLoading = false, failure = false;
   List<String> tokens = [];
   List permitData = [];
   MiniPermitModel? miniPermit;
@@ -24,7 +24,6 @@ class HomeState extends State<Home> {
   DateTime? expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
-  bool failure = false;
 
   @override
   void initState() {
@@ -134,13 +133,17 @@ class HomeState extends State<Home> {
     });
   }
 
-  void toggleVehicleIsFavouriteCallback(Vehicle vehicle) async {
+  void toggleVehicleIsFavouriteCallback(
+      Vehicle vehicle, bool isExpanded) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool wasFavourite = vehicle.isFavourite;
     bool isFavourite = !wasFavourite;
     await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
     Vehicle.sortByIsFavourite(permit!.vehicles);
+    if (isExpanded) {
+      selectedIndex = permit!.vehicles.indexOf(vehicle);
+    }
     setState(() {});
   }
 
