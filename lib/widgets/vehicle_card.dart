@@ -43,8 +43,15 @@ class VehicleCard extends StatelessWidget {
                       fontSize: 18,
                     ),
                   ),
-                  if (_vehicle.note != '') Text(' - ${_vehicle.note}'),
-                  Expanded(child: Container()),
+                  if (_vehicle.note != '')
+                    Expanded(
+                      child: Text(
+                        ' - ${_vehicle.note}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
+                  else
+                    Expanded(child: Container()),
                   if (_vehicle.isActive)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
