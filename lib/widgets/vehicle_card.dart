@@ -119,7 +119,7 @@ class VehicleCard extends StatelessWidget {
                         onPressed: () {
                           _assignPermit(_vehicle);
                         },
-                        child: const Text('Assign to permit'),
+                        child: const Text('Assign permit'),
                       ),
                     ],
                   ),
