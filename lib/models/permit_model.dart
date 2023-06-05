@@ -1639,6 +1639,7 @@ class PermitTypeProofDocumentCategory {
 
 class Vehicle {
   String note;
+  bool isFavourite;
   String type;
   int id;
   String vrm;
@@ -1666,6 +1667,7 @@ class Vehicle {
 
   Vehicle({
     required this.note,
+    required this.isFavourite,
     required this.type,
     required this.id,
     required this.vrm,
@@ -1694,6 +1696,7 @@ class Vehicle {
 
   factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
         note: '',
+        isFavourite: false,
         type: json["\u0024type"],
         id: json["id"],
         vrm: json["vrm"],
