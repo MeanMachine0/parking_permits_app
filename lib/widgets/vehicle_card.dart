@@ -76,8 +76,7 @@ class VehicleCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: TextField(
-                        decoration:
-                            const InputDecoration(labelText: 'Edit vrm'),
+                        decoration: const InputDecoration(labelText: 'Vrm'),
                         controller: TextEditingController(text: _vehicle.vrm),
                         onSubmitted: (newVrm) async {
                           _editVehicleVrm(_vehicle, newVrm);
