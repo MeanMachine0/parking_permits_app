@@ -14,13 +14,14 @@ class Login extends StatefulWidget {
 
 class LoginState extends State<Login> {
   final loginFormKey = GlobalKey<FormState>();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  bool isLoading = false;
-  bool hasAuthenticationCookies = false;
+  TextEditingController emailController = TextEditingController(),
+      passwordController = TextEditingController();
+  bool isLoading = false,
+      hasAuthenticationCookies = false,
+      passVis = true,
+      displayLoginError = false;
   List<String> tokens = [];
-  bool passVis = true;
-  bool displayLoginError = false;
+  String email = '';
 
   @override
   void initState() {
@@ -35,6 +36,8 @@ class LoginState extends State<Login> {
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
+      email = prefs.getString('email') ?? '';
+      emailController.text = email;
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -44,6 +47,7 @@ class LoginState extends State<Login> {
   }
 
   void login() async {
+    email = emailController.text;
     if (mounted) {
       setState(() {
         isLoading = true;
@@ -53,6 +57,7 @@ class LoginState extends State<Login> {
       tokens = await api.login(emailController.text, passwordController.text);
       await prefs.setStringList('tokens', tokens);
       if (tokens.isNotEmpty) {
+        await prefs.setString('email', email);
         // ignore: use_build_context_synchronously
         Navigator.pop(context, true);
       } else {
