@@ -38,7 +38,7 @@ class HomeState extends State<Home> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool detailedView = prefs.getBool('detailedView') ?? true;
+      bool detailedView = prefs.getBool('detailedView') ?? false;
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
