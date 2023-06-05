@@ -43,26 +43,27 @@ class SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Settings'),
-        ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  CheckboxListTile(
-                    title: const Text('Detailed View'),
-                    value: detailedView,
-                    onChanged: (newValue) async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      prefs.setBool('detailedView', newValue!);
-                      setState(() {
-                        detailedView = !detailedView;
-                      });
-                    },
-                  )
-                ],
-              ));
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                CheckboxListTile(
+                  title: const Text('Detailed View'),
+                  value: detailedView,
+                  onChanged: (newValue) async {
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    prefs.setBool('detailedView', newValue!);
+                    setState(() {
+                      detailedView = !detailedView;
+                    });
+                  },
+                )
+              ],
+            ),
+    );
   }
 }
