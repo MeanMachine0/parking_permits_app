@@ -84,7 +84,7 @@ class HomeState extends State<Home> {
 
   void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(vehicle.id.toString(), newNote);
+    await prefs.setString('${vehicle.id}Note', newNote);
     setState(() {
       vehicle.note = newNote;
     });
@@ -131,6 +131,15 @@ class HomeState extends State<Home> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  void toggleVehicleIsFavouriteCallback(Vehicle vehicle) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool wasFavourite = vehicle.isFavourite;
+    bool isFavourite = !wasFavourite;
+    await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
+    vehicle.isFavourite = isFavourite;
+    setState(() {});
   }
 
   @override
@@ -209,6 +218,8 @@ class HomeState extends State<Home> {
                                           assignPermit: assignPermitCallback,
                                           editVehicleVrm:
                                               editVehicleVrmCallback,
+                                          toggleVehicleIsFavourite:
+                                              toggleVehicleIsFavouriteCallback,
                                         ),
                                         onTap: () {
                                           if (selectedIndex == index) {

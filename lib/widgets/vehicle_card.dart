@@ -10,17 +10,20 @@ class VehicleCard extends StatelessWidget {
     required Function(Vehicle, String) updateVehicleNote,
     required Function(Vehicle) assignPermit,
     required Function(Vehicle, String) editVehicleVrm,
+    required Function(Vehicle) toggleVehicleIsFavourite,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
         _updateVehicleNote = updateVehicleNote,
         _assignPermit = assignPermit,
-        _editVehicleVrm = editVehicleVrm;
+        _editVehicleVrm = editVehicleVrm,
+        _toggleVehicleIsFavourite = toggleVehicleIsFavourite;
 
   final Vehicle _vehicle;
   final bool _isSelected;
   final Function(Vehicle, String) _updateVehicleNote;
   final Function(Vehicle) _assignPermit;
   final Function(Vehicle, String) _editVehicleVrm;
+  final Function(Vehicle) _toggleVehicleIsFavourite;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +57,20 @@ class VehicleCard extends StatelessWidget {
                         ),
                         textAlign: TextAlign.right,
                       ),
-                    )
+                    ),
+                  GestureDetector(
+                    onTap: () {
+                      _toggleVehicleIsFavourite(_vehicle);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Icon(
+                        _vehicle.isFavourite
+                            ? Icons.favorite
+                            : Icons.favorite_outline,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               if (_isSelected)
