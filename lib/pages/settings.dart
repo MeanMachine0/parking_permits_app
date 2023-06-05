@@ -10,8 +10,7 @@ class Settings extends StatefulWidget {
 
 class SettingsState extends State<Settings> {
   bool isLoading = false;
-  bool? hasSettings;
-  bool detailedView = false;
+  bool? detailedView;
 
   @override
   void initState() {
@@ -26,12 +25,10 @@ class SettingsState extends State<Settings> {
       });
     }
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    hasSettings = prefs.getBool('hasSettings');
-    if (hasSettings == null) {
+    detailedView = prefs.getBool('detailedView');
+    if (detailedView == null) {
       await prefs.setBool('detailedView', false);
-      await prefs.setBool('hasSettings', true);
-    } else {
-      detailedView = prefs.getBool('detailedView')!;
+      detailedView = false;
     }
     if (mounted) {
       setState(() {
@@ -58,7 +55,7 @@ class SettingsState extends State<Settings> {
                         await SharedPreferences.getInstance();
                     prefs.setBool('detailedView', newValue!);
                     setState(() {
-                      detailedView = !detailedView;
+                      detailedView = !detailedView!;
                     });
                   },
                 ),
