@@ -1749,4 +1749,16 @@ class Vehicle {
         "isPermitVehicle": isPermitVehicle,
         "category": category,
       };
+
+  static void sortByIsFavourite(List<Vehicle> vehicles) {
+    vehicles.sort((a, b) {
+      if (a.isFavourite == b.isFavourite) {
+        return a.vrm.compareTo(b.vrm);
+      } else if (a.isFavourite) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+  }
 }

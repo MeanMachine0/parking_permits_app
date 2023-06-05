@@ -139,6 +139,7 @@ class HomeState extends State<Home> {
     bool isFavourite = !wasFavourite;
     await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
+    Vehicle.sortByIsFavourite(permit!.vehicles);
     setState(() {});
   }
 
@@ -146,8 +147,8 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: (permit?.address.pafAddress.buildingName == '') &&
-                permit?.address.street != null
+        title: permit?.address.pafAddress.buildingName == '' &&
+                permit?.address.street != ''
             ? Text('${permit?.address.number} ${permit?.address.street}')
             : permit?.address.pafAddress.buildingName != null
                 ? Text(permit!.address.pafAddress.buildingName)
@@ -203,7 +204,9 @@ class HomeState extends State<Home> {
                           child: Column(
                             children: [
                               Text(
-                                  'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}'),
+                                'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
+                                textAlign: TextAlign.center,
+                              ),
                               const SizedBox(height: 10),
                               Expanded(
                                 child: ListView.builder(

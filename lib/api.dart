@@ -165,6 +165,7 @@ class Api {
         vehicle.isFavourite =
             prefs.getBool('${vehicle.id}IsFavourite') ?? false;
       }
+      Vehicle.sortByIsFavourite(permit.vehicles);
       return permit;
     } catch (e) {
       return null;
