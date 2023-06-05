@@ -161,7 +161,9 @@ class Api {
           permitModelFromJson(json.encode(response.data['permit']));
       SharedPreferences prefs = await SharedPreferences.getInstance();
       for (Vehicle vehicle in permit.vehicles) {
-        vehicle.note = prefs.getString(vehicle.id.toString()) ?? '';
+        vehicle.note = prefs.getString('${vehicle.id}Note') ?? '';
+        vehicle.isFavourite =
+            prefs.getBool('${vehicle.id}IsFavourite') ?? false;
       }
       return permit;
     } catch (e) {
