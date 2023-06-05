@@ -71,6 +71,7 @@ class HomeState extends State<Home> {
     setState(() {
       tokens.clear();
       permitData.clear();
+      permit = null;
     });
   }
 
@@ -125,7 +126,12 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(permit?.address.street ?? 'Home'),
+        title: (permit?.address.pafAddress.buildingName == '') &&
+                permit?.address.street != null
+            ? Text('${permit?.address.number} ${permit?.address.street}')
+            : permit?.address.pafAddress.buildingName != null
+                ? Text(permit!.address.pafAddress.buildingName)
+                : const Text('Home'),
         scrolledUnderElevation: 0,
         actions: [
           Padding(
