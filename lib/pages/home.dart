@@ -193,11 +193,9 @@ class HomeState extends State<Home> {
                   effects: const [
                     FadeEffect(),
                   ],
-                  child: Center(
+                  child: const Center(
                     child: Text(
-                      tokens.isEmpty
-                          ? 'You are not logged in.'
-                          : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
+                      'You are not logged in.',
                     ),
                   ),
                 )
