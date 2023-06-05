@@ -44,7 +44,7 @@ class SettingsState extends State<Settings> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text('Home'),
+          title: const Text('Settings'),
         ),
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
