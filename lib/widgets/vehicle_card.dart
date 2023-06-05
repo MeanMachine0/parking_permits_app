@@ -69,7 +69,7 @@ class VehicleCard extends StatelessWidget {
                       _toggleVehicleIsFavourite(_vehicle, _isSelected);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 6),
+                      padding: EdgeInsets.only(left: _vehicle.isActive ? 6 : 0),
                       child: Icon(
                         _vehicle.isFavourite
                             ? Icons.favorite
