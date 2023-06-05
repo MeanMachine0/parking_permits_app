@@ -61,7 +61,20 @@ class SettingsState extends State<Settings> {
                       detailedView = !detailedView;
                     });
                   },
-                )
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      await prefs.clear();
+                    },
+                    child: const Text(
+                      'Delete user data',
+                    ),
+                  ),
+                ),
               ],
             ),
     );
