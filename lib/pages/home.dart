@@ -24,6 +24,7 @@ class HomeState extends State<Home> {
   DateTime? expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
+  bool failure = false;
 
   @override
   void initState() {
@@ -49,6 +50,8 @@ class HomeState extends State<Home> {
               .getMiniPermits(tokens[1], tokens[2], tokens[3], !detailedView);
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
+      } else if (permitData.isNotEmpty && permitData[0] == false) {
+        failure = true;
       } else if (permitData.isNotEmpty && !detailedView) {
         miniPermit = permitData[0];
         permit = permitData[1];
@@ -71,7 +74,11 @@ class HomeState extends State<Home> {
     setState(() {
       tokens.clear();
       permitData.clear();
+      miniPermit = null;
       permit = null;
+      miniPermits.clear();
+      selectedIndex = -1;
+      failure = false;
     });
   }
 
@@ -88,15 +95,17 @@ class HomeState extends State<Home> {
       isLoading = true;
     });
     activeVehicle!.isActive = false;
-    await Api().assignPermit(
+    bool success = await Api().assignPermit(
       permit!.id.toString(),
       newActiveVehicle.id.toString(),
       tokens[1],
       tokens[2],
       tokens[3],
     );
-    activeVehicle = newActiveVehicle;
-    selectedIndex = -1;
+    if (success) {
+      activeVehicle = newActiveVehicle;
+      selectedIndex = -1;
+    }
     setState(() {
       activeVehicle!.isActive = true;
       isLoading = false;
@@ -107,7 +116,7 @@ class HomeState extends State<Home> {
     setState(() {
       isLoading = true;
     });
-    await Api().editVehicleVrm(
+    bool success = await Api().editVehicleVrm(
       permit!.id.toString(),
       oldVehicle.id.toString(),
       newVehicleVrm,
@@ -115,7 +124,9 @@ class HomeState extends State<Home> {
       tokens[2],
       tokens[3],
     );
-    oldVehicle.vrm = newVehicleVrm;
+    if (success) {
+      oldVehicle.vrm = newVehicleVrm;
+    }
     selectedIndex = -1;
     setState(() {
       isLoading = false;
@@ -165,55 +176,64 @@ class HomeState extends State<Home> {
           : permitData.isEmpty
               ? Center(
                   child: Text(
-                  tokens.isEmpty
-                      ? 'You are not logged in.'
-                      : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
-                ))
-              : permit != null
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      child: Column(
-                        children: [
-                          Text(
-                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}'),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: permit!.vehicles.length,
-                              itemBuilder: (content, index) {
-                                return GestureDetector(
-                                    child: VehicleCard(
-                                      vehicle: permit!.vehicles[index],
-                                      isSelected: index == selectedIndex,
-                                      updateVehicleNote:
-                                          updateVehicleNoteCallback,
-                                      assignPermit: assignPermitCallback,
-                                      editVehicleVrm: editVehicleVrmCallback,
-                                    ),
-                                    onTap: () {
-                                      if (selectedIndex == index) {
-                                        setState(() {
-                                          selectedIndex = -1;
-                                        });
-                                      } else {
-                                        setState(() {
-                                          selectedIndex = index;
-                                        });
-                                      }
-                                    });
-                              },
-                            ),
-                          ),
-                        ],
+                    tokens.isEmpty
+                        ? 'You are not logged in.'
+                        : '${tokens[0]} ${tokens[1]} ${tokens[2]} ${tokens[3]}',
+                  ),
+                )
+              : failure
+                  ? const Center(
+                      child: Text(
+                        'You have no permits to view or an error occurred whilst attempting to retreive them.',
+                        textAlign: TextAlign.center,
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: miniPermits.length,
-                      itemBuilder: (content, index) {
-                        // Coming soon:
-                        return const SizedBox.shrink();
-                      },
-                    ),
+                  : permit != null
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                          child: Column(
+                            children: [
+                              Text(
+                                  'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}'),
+                              const SizedBox(height: 10),
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount: permit!.vehicles.length,
+                                  itemBuilder: (content, index) {
+                                    return GestureDetector(
+                                        child: VehicleCard(
+                                          vehicle: permit!.vehicles[index],
+                                          isSelected: index == selectedIndex,
+                                          updateVehicleNote:
+                                              updateVehicleNoteCallback,
+                                          assignPermit: assignPermitCallback,
+                                          editVehicleVrm:
+                                              editVehicleVrmCallback,
+                                        ),
+                                        onTap: () {
+                                          if (selectedIndex == index) {
+                                            setState(() {
+                                              selectedIndex = -1;
+                                            });
+                                          } else {
+                                            setState(() {
+                                              selectedIndex = index;
+                                            });
+                                          }
+                                        });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: miniPermits.length,
+                          itemBuilder: (content, index) {
+                            // Coming soon:
+                            return const SizedBox.shrink();
+                          },
+                        ),
     );
   }
 }

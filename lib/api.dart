@@ -114,29 +114,36 @@ class Api {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
       'x-xsrf-token': xsrfToken.split('peterborough=')[1]
     };
-    var response = await Dio().post('${accountUrl}api/RequestProcessor/',
-        data: body,
-        options: Options(
-          headers: headers,
-        ));
-    if (firstOnly) {
-      var itemData = response.data['items'][0];
-      MiniPermitModel miniPermit =
-          miniPermitModelFromJson(json.encode(itemData));
-      String permitId = itemData['id'].toString();
-      PermitModel permit =
-          await getPermit(permitId, fedAuthArpToken, xsrfToken, iXsrfToken);
-      return [miniPermit, permit];
+    try {
+      var response = await Dio().post('${accountUrl}api/RequestProcessor/',
+          data: body,
+          options: Options(
+            headers: headers,
+          ));
+      if (firstOnly) {
+        var itemData = response.data['items'][0];
+        MiniPermitModel miniPermit =
+            miniPermitModelFromJson(json.encode(itemData));
+        String permitId = itemData['id'].toString();
+        PermitModel? permit =
+            await getPermit(permitId, fedAuthArpToken, xsrfToken, iXsrfToken);
+        if (permit == null) {
+          return [false];
+        }
+        return [miniPermit, permit];
+      }
+      List<dynamic> miniPermitsData = response.data['items'];
+      List<MiniPermitModel> miniPermits = [];
+      for (Map<String, dynamic> miniPermit in miniPermitsData) {
+        miniPermits.add(miniPermitModelFromJson(json.encode(miniPermit)));
+      }
+      return miniPermits;
+    } catch (e) {
+      return [false];
     }
-    List<dynamic> miniPermitsData = response.data['items'];
-    List<MiniPermitModel> miniPermits = [];
-    for (Map<String, dynamic> miniPermit in miniPermitsData) {
-      miniPermits.add(miniPermitModelFromJson(json.encode(miniPermit)));
-    }
-    return miniPermits;
   }
 
-  Future<PermitModel> getPermit(String permitId, String fedAuthArpToken,
+  Future<PermitModel?> getPermit(String permitId, String fedAuthArpToken,
       String xsrfToken, String iXsrfToken) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
@@ -147,19 +154,22 @@ class Api {
           'Permits.Account.Common.Request.GetPermitRequest, Permits.Account.Common',
       'id': permitId
     };
-    var response = await Dio()
-        .post(processorUrl, data: body, options: Options(headers: headers));
-    PermitModel permit =
-        permitModelFromJson(json.encode(response.data['permit']));
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    for (Vehicle vehicle in permit.vehicles) {
-      vehicle.note = prefs.getString(vehicle.id.toString()) ?? '';
+    try {
+      var response = await Dio()
+          .post(processorUrl, data: body, options: Options(headers: headers));
+      PermitModel permit =
+          permitModelFromJson(json.encode(response.data['permit']));
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      for (Vehicle vehicle in permit.vehicles) {
+        vehicle.note = prefs.getString(vehicle.id.toString()) ?? '';
+      }
+      return permit;
+    } catch (e) {
+      return null;
     }
-    return permit;
   }
 
-  Future<void> assignPermit(String permitId, String newVehicleId,
+  Future<bool> assignPermit(String permitId, String newVehicleId,
       String fedAuthArpToken, String xsrfToken, String iXsrfToken) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
@@ -171,16 +181,24 @@ class Api {
       "permitId": permitId,
       "vehicleId": newVehicleId
     };
-    await Dio().post(
-      processorUrl,
-      data: body,
-      options: Options(
-        headers: headers,
-      ),
-    );
+    try {
+      var response = await Dio().post(
+        processorUrl,
+        data: body,
+        options: Options(
+          headers: headers,
+        ),
+      );
+      if (!response.data['success']) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
-  Future<void> editVehicleVrm(
+  Future<bool> editVehicleVrm(
       String permitId,
       String oldVehicleId,
       String newVehicleVrm,
@@ -215,14 +233,22 @@ class Api {
         }
       }
     ];
-    for (Map<String, dynamic> body in bodies) {
-      await Dio().post(
-        processorUrl,
-        data: body,
-        options: Options(
-          headers: headers,
-        ),
-      );
+    try {
+      for (Map<String, dynamic> body in bodies) {
+        var response = await Dio().post(
+          processorUrl,
+          data: body,
+          options: Options(
+            headers: headers,
+          ),
+        );
+        if (!response.data['success']) {
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 }
