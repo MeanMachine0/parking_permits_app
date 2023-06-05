@@ -125,37 +125,34 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: Text(permit?.address.street ?? 'Home'),
         scrolledUnderElevation: 0,
-        actions: tokens.isEmpty
-            ? [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      setState(() {
-                        isLoading = true;
-                      });
-                      await Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => const Login())) ??
-                          [];
-                      getData();
-                    },
-                    child: const Text('Login'),
-                  ),
-                ),
-              ]
-            : [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      logout();
-                    },
-                    child: const Text('Logout'),
-                  ),
-                ),
-              ],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: ElevatedButton(
+              onPressed: () async {
+                setState(() {
+                  isLoading = true;
+                });
+                if (tokens.isEmpty) {
+                  await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const Login())) ??
+                      [];
+                  getData();
+                } else {
+                  logout();
+                }
+                if (mounted) {
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+              },
+              child: Text(tokens.isEmpty ? 'Login' : 'Logout'),
+            ),
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
