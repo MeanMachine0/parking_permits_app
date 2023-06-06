@@ -16,7 +16,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false, failure = false;
+  bool isLoading = false, failure = false, isReorderable = false;
   List<String> tokens = [];
   List permitData = [];
   MiniPermitModel? miniPermit;
@@ -39,6 +39,7 @@ class HomeState extends State<Home> {
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       bool detailedView = prefs.getBool('detailedView') ?? false;
+      isReorderable = prefs.getBool('isReorderable') ?? false;
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
@@ -142,9 +143,7 @@ class HomeState extends State<Home> {
     await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
     Vehicle.sortByIsFavourite(permit!.vehicles);
-    if (isExpanded) {
-      selectedIndex = permit!.vehicles.indexOf(vehicle);
-    }
+    if (isExpanded) selectedIndex = permit!.vehicles.indexOf(vehicle);
     setState(() {});
   }
 
@@ -226,41 +225,100 @@ class HomeState extends State<Home> {
                                 ),
                                 const SizedBox(height: 10),
                                 Expanded(
-                                  child: ListView.builder(
-                                    itemCount: permit!.vehicles.length,
-                                    itemBuilder: (content, index) {
-                                      return Animate(
-                                        effects: const [
-                                          SlideEffect(),
-                                        ],
-                                        child: GestureDetector(
-                                            child: VehicleCard(
-                                              vehicle: permit!.vehicles[index],
-                                              isSelected:
-                                                  index == selectedIndex,
-                                              updateVehicleNote:
-                                                  updateVehicleNoteCallback,
-                                              assignPermit:
-                                                  assignPermitCallback,
-                                              editVehicleVrm:
-                                                  editVehicleVrmCallback,
-                                              toggleVehicleIsFavourite:
-                                                  toggleVehicleIsFavouriteCallback,
-                                            ),
-                                            onTap: () {
-                                              if (selectedIndex == index) {
-                                                setState(() {
-                                                  selectedIndex = -1;
-                                                });
-                                              } else {
-                                                setState(() {
-                                                  selectedIndex = index;
-                                                });
+                                  child: isReorderable
+                                      ? ReorderableListView(
+                                          onReorder: (oldIndex, newIndex) {
+                                            setState(() {
+                                              if (newIndex > oldIndex) {
+                                                newIndex--;
                                               }
-                                            }),
-                                      );
-                                    },
-                                  ),
+                                              final vehicle = permit!.vehicles
+                                                  .removeAt(oldIndex);
+                                              permit!.vehicles
+                                                  .insert(newIndex, vehicle);
+                                            });
+                                          },
+                                          children: [
+                                              for (Vehicle vehicle
+                                                  in permit!.vehicles)
+                                                Animate(
+                                                  key: ValueKey(vehicle),
+                                                  effects: const [
+                                                    SlideEffect(),
+                                                  ],
+                                                  child: GestureDetector(
+                                                      child: VehicleCard(
+                                                        vehicle: vehicle,
+                                                        isSelected: permit!
+                                                                .vehicles
+                                                                .indexOf(
+                                                                    vehicle) ==
+                                                            selectedIndex,
+                                                        updateVehicleNote:
+                                                            updateVehicleNoteCallback,
+                                                        assignPermit:
+                                                            assignPermitCallback,
+                                                        editVehicleVrm:
+                                                            editVehicleVrmCallback,
+                                                        toggleVehicleIsFavourite:
+                                                            toggleVehicleIsFavouriteCallback,
+                                                      ),
+                                                      onTap: () {
+                                                        if (selectedIndex ==
+                                                            permit!.vehicles
+                                                                .indexOf(
+                                                                    vehicle)) {
+                                                          setState(() {
+                                                            selectedIndex = -1;
+                                                          });
+                                                        } else {
+                                                          setState(() {
+                                                            selectedIndex =
+                                                                permit!.vehicles
+                                                                    .indexOf(
+                                                                        vehicle);
+                                                          });
+                                                        }
+                                                      }),
+                                                )
+                                            ])
+                                      : ListView.builder(
+                                          itemCount: permit!.vehicles.length,
+                                          itemBuilder: (content, index) {
+                                            return Animate(
+                                              effects: const [
+                                                SlideEffect(),
+                                              ],
+                                              child: GestureDetector(
+                                                  child: VehicleCard(
+                                                    vehicle:
+                                                        permit!.vehicles[index],
+                                                    isSelected:
+                                                        index == selectedIndex,
+                                                    updateVehicleNote:
+                                                        updateVehicleNoteCallback,
+                                                    assignPermit:
+                                                        assignPermitCallback,
+                                                    editVehicleVrm:
+                                                        editVehicleVrmCallback,
+                                                    toggleVehicleIsFavourite:
+                                                        toggleVehicleIsFavouriteCallback,
+                                                  ),
+                                                  onTap: () {
+                                                    if (selectedIndex ==
+                                                        index) {
+                                                      setState(() {
+                                                        selectedIndex = -1;
+                                                      });
+                                                    } else {
+                                                      setState(() {
+                                                        selectedIndex = index;
+                                                      });
+                                                    }
+                                                  }),
+                                            );
+                                          },
+                                        ),
                                 ),
                               ],
                             ),

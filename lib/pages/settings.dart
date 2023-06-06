@@ -10,7 +10,7 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  bool isLoading = false;
+  bool isLoading = false, isReorderable = false;
   bool? detailedView;
 
   @override
@@ -27,6 +27,7 @@ class SettingsState extends State<Settings> {
     }
     SharedPreferences prefs = await SharedPreferences.getInstance();
     detailedView = prefs.getBool('detailedView');
+    isReorderable = prefs.getBool('isReorderable') ?? false;
     if (detailedView == null) {
       await prefs.setBool('detailedView', false);
       detailedView = false;
@@ -61,6 +62,18 @@ class SettingsState extends State<Settings> {
                       prefs.setBool('detailedView', newValue!);
                       setState(() {
                         detailedView = !detailedView!;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Reorderable Vehicles'),
+                    value: isReorderable,
+                    onChanged: (newValue) async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      prefs.setBool('isReorderable', newValue!);
+                      setState(() {
+                        isReorderable = !isReorderable;
                       });
                     },
                   ),
