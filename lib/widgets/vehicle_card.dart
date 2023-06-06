@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/permit_model.dart';
 
@@ -27,7 +28,7 @@ class VehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      // elevation: 3,
+      elevation: 4,
       child: Padding(
           padding: const EdgeInsets.all(10),
           child: Column(
@@ -80,48 +81,64 @@ class VehicleCard extends StatelessWidget {
                 ],
               ),
               if (_isSelected)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(labelText: 'Note'),
-                        controller: TextEditingController(text: _vehicle.note),
-                        onSubmitted: (newNote) async {
-                          _updateVehicleNote(_vehicle, newNote);
-                        },
-                      ),
-                    ),
+                Animate(
+                  effects: const [
+                    FadeEffect(),
                   ],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: const InputDecoration(labelText: 'Note'),
+                          controller:
+                              TextEditingController(text: _vehicle.note),
+                          onSubmitted: (newNote) async {
+                            _updateVehicleNote(_vehicle, newNote);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               if (_isSelected)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(labelText: 'Vrm'),
-                        controller: TextEditingController(text: _vehicle.vrm),
-                        onSubmitted: (newVrm) async {
-                          if (newVrm.replaceAll(' ', '') != _vehicle.vrm) {
-                            _editVehicleVrm(_vehicle, newVrm);
-                          }
-                        },
-                      ),
-                    ),
+                Animate(
+                  effects: const [
+                    FadeEffect(),
                   ],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: const InputDecoration(labelText: 'Vrm'),
+                          controller: TextEditingController(text: _vehicle.vrm),
+                          onSubmitted: (newVrm) async {
+                            if (newVrm.replaceAll(' ', '') != _vehicle.vrm) {
+                              _editVehicleVrm(_vehicle, newVrm);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               if (_isSelected && !_vehicle.isActive)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _assignPermit(_vehicle);
-                        },
-                        child: const Text('Assign permit'),
-                      ),
+                  child: Animate(
+                    effects: const [
+                      FadeEffect(),
                     ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            _assignPermit(_vehicle);
+                          },
+                          child: const Text('Assign permit'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
             ],
