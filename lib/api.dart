@@ -254,4 +254,64 @@ class Api {
       return false;
     }
   }
+
+  Future<PermitModel?> addVehicleToPermit(
+    String vrm,
+    PermitModel permit,
+    String fedAuthArpToken,
+    String xsrfToken,
+    String iXsrfToken,
+  ) async {
+    Map<String, String> headers = {
+      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
+      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+    };
+    List<Map<String, dynamic>> bodies = [
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.StartPermitVehicleEditRequest, Permits.Account.Common",
+        "permitId": permit.id.toString(),
+        "vehicleId": '0'
+      },
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.ValidateVrmAccountRequest, Permits.Account.Common",
+        "vrm": vrm
+      },
+      {
+        "\u0024type":
+            "Permits.Account.Common.Request.SavePermitVehicleChangesRequest, Permits.Account.Common",
+        "permitId": permit.id.toString(),
+        "vehicle": {
+          "\u0024type":
+              "Permits.Infrastructure.Model.PermitVehicleEditModel, Permits.Infrastructure",
+          "id": '0',
+          "vrm": vrm
+        }
+      }
+    ];
+    try {
+      for (Map<String, dynamic> body in bodies) {
+        var response = await Dio().post(
+          processorUrl,
+          data: body,
+          options: Options(
+            headers: headers,
+          ),
+        );
+        if (!response.data['success']) {
+          return null;
+        }
+      }
+      PermitModel? updatedPermit = await getPermit(
+        permit.id.toString(),
+        fedAuthArpToken,
+        xsrfToken,
+        iXsrfToken,
+      );
+      return updatedPermit;
+    } catch (e) {
+      return null;
+    }
+  }
 }
