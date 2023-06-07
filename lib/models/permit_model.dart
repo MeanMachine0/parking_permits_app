@@ -1769,8 +1769,12 @@ class Vehicle {
   static void sortByCustom(List<Vehicle> vehicles) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> orderedVehicleIds = prefs.getStringList('orderedVehicleIds')!;
+    Map<int, int> orderedVehicleIdsToIndices = {};
+    for (int i = 0; i < orderedVehicleIds.length; i++) {
+      orderedVehicleIdsToIndices[int.parse(orderedVehicleIds[i])] = i;
+    }
     for (Vehicle vehicle in vehicles) {
-      vehicle.index = orderedVehicleIds.indexOf(vehicle.id.toString());
+      vehicle.index = orderedVehicleIdsToIndices[vehicle.id];
     }
     vehicles.sort((a, b) {
       return a.index!.compareTo(b.index!);
