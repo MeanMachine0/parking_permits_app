@@ -332,7 +332,11 @@ class HomeState extends State<Home> {
                                           onReorder:
                                               (oldIndex, newIndex) async {
                                             setState(() {
-                                              if (newIndex > oldIndex) {
+                                              if (newIndex ==
+                                                  permit!.vehicles.length + 1) {
+                                                newIndex =
+                                                    permit!.vehicles.length - 1;
+                                              } else if (newIndex > oldIndex) {
                                                 newIndex--;
                                               }
                                               final Vehicle vehicle = permit!
@@ -357,7 +361,11 @@ class HomeState extends State<Home> {
                                                 'orderedVehicleIds',
                                                 orderedVehicleIds);
                                             if (mounted) {
-                                              setState(() {});
+                                              setState(() {
+                                                if (selectedIndex == oldIndex) {
+                                                  selectedIndex = newIndex;
+                                                }
+                                              });
                                             }
                                           },
                                           children: [
