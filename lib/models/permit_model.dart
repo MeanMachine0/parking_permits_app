@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 PermitModel permitModelFromJson(String str) =>
     PermitModel.fromJson(json.decode(str));
 
@@ -1640,6 +1642,7 @@ class PermitTypeProofDocumentCategory {
 class Vehicle {
   String note;
   bool isFavourite;
+  int? index;
   String type;
   int id;
   String vrm;
@@ -1668,6 +1671,7 @@ class Vehicle {
   Vehicle({
     required this.note,
     required this.isFavourite,
+    this.index,
     required this.type,
     required this.id,
     required this.vrm,
@@ -1759,6 +1763,17 @@ class Vehicle {
       } else {
         return 1;
       }
+    });
+  }
+
+  static void sortByCustom(List<Vehicle> vehicles) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> orderedVehicleIds = prefs.getStringList('orderedVehicleIds')!;
+    for (Vehicle vehicle in vehicles) {
+      vehicle.index = orderedVehicleIds.indexOf(vehicle.id.toString());
+    }
+    vehicles.sort((a, b) {
+      return a.index!.compareTo(b.index!);
     });
   }
 }

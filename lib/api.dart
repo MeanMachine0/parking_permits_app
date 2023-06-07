@@ -99,7 +99,7 @@ class Api {
   }
 
   Future<List> getMiniPermits(String fedAuthArpToken, String xsrfToken,
-      String iXsrfToken, bool firstOnly) async {
+      String iXsrfToken, bool firstOnly, bool customSort) async {
     Map<String, dynamic> body = {
       '\u0024type':
           'Permits.Account.Common.Request.GetPermitsRequest, Permits.Account.Common',
@@ -125,8 +125,8 @@ class Api {
         MiniPermitModel miniPermit =
             miniPermitModelFromJson(json.encode(itemData));
         String permitId = itemData['id'].toString();
-        PermitModel? permit =
-            await getPermit(permitId, fedAuthArpToken, xsrfToken, iXsrfToken);
+        PermitModel? permit = await getPermit(
+            permitId, fedAuthArpToken, xsrfToken, iXsrfToken, customSort);
         if (permit == null) {
           return [false];
         }
@@ -144,7 +144,7 @@ class Api {
   }
 
   Future<PermitModel?> getPermit(String permitId, String fedAuthArpToken,
-      String xsrfToken, String iXsrfToken) async {
+      String xsrfToken, String iXsrfToken, bool customSort) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
       'x-xsrf-token': xsrfToken.split('peterborough=')[1]
@@ -165,7 +165,11 @@ class Api {
         vehicle.isFavourite =
             prefs.getBool('${vehicle.id}IsFavourite') ?? false;
       }
-      Vehicle.sortByIsFavourite(permit.vehicles);
+      if (customSort) {
+        Vehicle.sortByCustom(permit.vehicles);
+      } else {
+        Vehicle.sortByIsFavourite(permit.vehicles);
+      }
       return permit;
     } catch (e) {
       return null;
@@ -256,12 +260,12 @@ class Api {
   }
 
   Future<PermitModel?> addVehicleToPermit(
-    String vrm,
-    PermitModel permit,
-    String fedAuthArpToken,
-    String xsrfToken,
-    String iXsrfToken,
-  ) async {
+      String vrm,
+      PermitModel permit,
+      String fedAuthArpToken,
+      String xsrfToken,
+      String iXsrfToken,
+      bool customSort) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
       'x-xsrf-token': xsrfToken.split('peterborough=')[1]
@@ -303,12 +307,8 @@ class Api {
           return null;
         }
       }
-      PermitModel? updatedPermit = await getPermit(
-        permit.id.toString(),
-        fedAuthArpToken,
-        xsrfToken,
-        iXsrfToken,
-      );
+      PermitModel? updatedPermit = await getPermit(permit.id.toString(),
+          fedAuthArpToken, xsrfToken, iXsrfToken, customSort);
       return updatedPermit;
     } catch (e) {
       return null;
