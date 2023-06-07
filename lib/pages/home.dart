@@ -246,7 +246,7 @@ class HomeState extends State<Home> {
                     )
                   : permit != null
                       ? Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Animate(
                             effects: const [
                               FadeEffect(),
@@ -373,6 +373,30 @@ class HomeState extends State<Home> {
                                                     permit!.vehicles
                                                         .indexOf(vehicle)),
                                               ),
+                                            Padding(
+                                              key: const ValueKey(-1),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 4),
+                                              child: Center(
+                                                child: ElevatedButton(
+                                                  onPressed: () async {
+                                                    SharedPreferences prefs =
+                                                        await SharedPreferences
+                                                            .getInstance();
+                                                    prefs.remove(
+                                                        'orderedVehicleIds');
+                                                    setState(() {
+                                                      Vehicle.sortByIsFavourite(
+                                                          permit!.vehicles);
+                                                    });
+                                                  },
+                                                  child: const Text(
+                                                      'Reset custom ordering'),
+                                                  onLongPress: () {},
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         )
                                       : ListView.builder(
