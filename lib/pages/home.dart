@@ -157,6 +157,30 @@ class HomeState extends State<Home> {
     setState(() {});
   }
 
+  GestureDetector interactiveVehicleCard(Vehicle vehicle, int index) {
+    return GestureDetector(
+      child: VehicleCard(
+        vehicle: vehicle,
+        isSelected: index == selectedIndex,
+        updateVehicleNote: updateVehicleNoteCallback,
+        editVehicleVrm: editVehicleVrmCallback,
+        assignPermit: assignPermitCallback,
+        toggleVehicleIsFavourite: toggleVehicleIsFavouriteCallback,
+      ),
+      onTap: () {
+        if (selectedIndex == index) {
+          setState(() {
+            selectedIndex = -1;
+          });
+        } else {
+          setState(() {
+            selectedIndex = index;
+          });
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -332,52 +356,25 @@ class HomeState extends State<Home> {
                                             await prefs.setStringList(
                                                 'orderedVehicleIds',
                                                 orderedVehicleIds);
-                                            setState(() {});
+                                            if (mounted) {
+                                              setState(() {});
+                                            }
                                           },
                                           children: [
-                                              for (Vehicle vehicle
-                                                  in permit!.vehicles)
-                                                Animate(
-                                                  key: ValueKey(vehicle),
-                                                  effects: const [
-                                                    SlideEffect(),
-                                                  ],
-                                                  child: GestureDetector(
-                                                      child: VehicleCard(
-                                                        vehicle: vehicle,
-                                                        isSelected: permit!
-                                                                .vehicles
-                                                                .indexOf(
-                                                                    vehicle) ==
-                                                            selectedIndex,
-                                                        updateVehicleNote:
-                                                            updateVehicleNoteCallback,
-                                                        assignPermit:
-                                                            assignPermitCallback,
-                                                        editVehicleVrm:
-                                                            editVehicleVrmCallback,
-                                                        toggleVehicleIsFavourite:
-                                                            toggleVehicleIsFavouriteCallback,
-                                                      ),
-                                                      onTap: () {
-                                                        if (selectedIndex ==
-                                                            permit!.vehicles
-                                                                .indexOf(
-                                                                    vehicle)) {
-                                                          setState(() {
-                                                            selectedIndex = -1;
-                                                          });
-                                                        } else {
-                                                          setState(() {
-                                                            selectedIndex =
-                                                                permit!.vehicles
-                                                                    .indexOf(
-                                                                        vehicle);
-                                                          });
-                                                        }
-                                                      }),
-                                                )
-                                            ])
+                                            for (Vehicle vehicle
+                                                in permit!.vehicles)
+                                              Animate(
+                                                key: ValueKey(vehicle),
+                                                effects: const [
+                                                  SlideEffect(),
+                                                ],
+                                                child: interactiveVehicleCard(
+                                                    vehicle,
+                                                    permit!.vehicles
+                                                        .indexOf(vehicle)),
+                                              ),
+                                          ],
+                                        )
                                       : ListView.builder(
                                           itemCount: permit!.vehicles.length,
                                           itemBuilder: (content, index) {
@@ -385,33 +382,9 @@ class HomeState extends State<Home> {
                                               effects: const [
                                                 SlideEffect(),
                                               ],
-                                              child: GestureDetector(
-                                                  child: VehicleCard(
-                                                    vehicle:
-                                                        permit!.vehicles[index],
-                                                    isSelected:
-                                                        index == selectedIndex,
-                                                    updateVehicleNote:
-                                                        updateVehicleNoteCallback,
-                                                    assignPermit:
-                                                        assignPermitCallback,
-                                                    editVehicleVrm:
-                                                        editVehicleVrmCallback,
-                                                    toggleVehicleIsFavourite:
-                                                        toggleVehicleIsFavouriteCallback,
-                                                  ),
-                                                  onTap: () {
-                                                    if (selectedIndex ==
-                                                        index) {
-                                                      setState(() {
-                                                        selectedIndex = -1;
-                                                      });
-                                                    } else {
-                                                      setState(() {
-                                                        selectedIndex = index;
-                                                      });
-                                                    }
-                                                  }),
+                                              child: interactiveVehicleCard(
+                                                  permit!.vehicles[index],
+                                                  index),
                                             );
                                           },
                                         ),
