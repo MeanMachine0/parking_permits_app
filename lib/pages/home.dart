@@ -137,7 +137,7 @@ class HomeState extends State<Home> {
     );
     if (success) {
       oldVehicle.vrm = newVehicleVrm;
-      Vehicle.sortByIsFavourite(permit!.vehicles);
+      if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
     }
     selectedIndex = -1;
     setState(() {
@@ -152,7 +152,7 @@ class HomeState extends State<Home> {
     bool isFavourite = !wasFavourite;
     await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
-    Vehicle.sortByIsFavourite(permit!.vehicles);
+    if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
     if (isExpanded) selectedIndex = permit!.vehicles.indexOf(vehicle);
     setState(() {});
   }
