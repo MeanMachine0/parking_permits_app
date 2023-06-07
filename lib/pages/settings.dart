@@ -84,6 +84,10 @@ class SettingsState extends State<Settings> {
                         SharedPreferences prefs =
                             await SharedPreferences.getInstance();
                         await prefs.clear();
+                        setState(() {
+                          detailedView = false;
+                          isReorderable = false;
+                        });
                       },
                       child: const Text(
                         'Delete user data',
