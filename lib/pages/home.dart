@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api.dart';
 import '../constants.dart';
 import '../models/permit_model.dart';
+import '../widgets/mini_permit_card.dart';
 import '../widgets/vehicle_card.dart';
 import 'login.dart';
 
@@ -17,11 +18,14 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false, failure = false, isReorderable = false;
+  bool isLoading = false,
+      failure = false,
+      isReorderable = false,
+      detailedView = false,
+      firstPass = true;
   bool? addVehicleFailure;
   List<String> tokens = [], orderedVehicleIds = [];
   List permitData = [];
-  MiniPermitModel? miniPermit;
   PermitModel? permit;
   List<MiniPermitModel> miniPermits = [];
   DateTime? expiry;
@@ -40,11 +44,8 @@ class HomeState extends State<Home> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool detailedView = prefs.getBool('detailedView') ?? false;
+      detailedView = prefs.getBool('detailedView') ?? false;
       isReorderable = prefs.getBool('isReorderable') ?? false;
-      if (isReorderable) {
-        orderedVehicleIds = prefs.getStringList('orderedVehicleIds') ?? [];
-      }
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
@@ -57,14 +58,13 @@ class HomeState extends State<Home> {
                   tokens[2],
                   tokens[3],
                   !detailedView,
-                  orderedVehicleIds.isNotEmpty,
+                  isReorderable,
                 );
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
       } else if (permitData.isNotEmpty && permitData[0] == false) {
         failure = true;
       } else if (permitData.isNotEmpty && !detailedView) {
-        miniPermit = permitData[0];
         permit = permitData[1];
         activeVehicle =
             permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
@@ -85,7 +85,6 @@ class HomeState extends State<Home> {
     setState(() {
       tokens.clear();
       permitData.clear();
-      miniPermit = null;
       permit = null;
       miniPermits.clear();
       selectedIndex = -1;
@@ -105,7 +104,7 @@ class HomeState extends State<Home> {
     setState(() {
       isLoading = true;
     });
-    activeVehicle!.isActive = false;
+    activeVehicle?.isActive = false;
     bool success = await Api().assignPermit(
       permit!.id.toString(),
       newActiveVehicle.id.toString(),
@@ -185,12 +184,26 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: permit?.address.pafAddress.buildingName == '' &&
-                permit?.address.street != ''
-            ? Text('${permit?.address.number} ${permit?.address.street}')
-            : permit?.address.pafAddress.buildingName != null
-                ? Text(permit!.address.pafAddress.buildingName)
-                : const Text('Home'),
+        leading: !firstPass && miniPermits.isEmpty && tokens.isNotEmpty
+            ? IconButton(
+                onPressed: () {
+                  permit = null;
+                  firstPass = true;
+                  getData();
+                },
+                icon: const Icon(Icons.arrow_back))
+            : null,
+        title: miniPermits.isNotEmpty
+            ? const Text('My Permits')
+            : !firstPass
+                ? Text(permit?.permitNumber ?? 'Ape')
+                : permit?.address.pafAddress.buildingName == '' &&
+                        permit?.address.street != ''
+                    ? Text(
+                        '${permit?.address.number} ${permit?.address.street}')
+                    : permit?.address.pafAddress.buildingName != null
+                        ? Text(permit!.address.pafAddress.buildingName)
+                        : const Text('Home'),
         scrolledUnderElevation: 0,
         actions: [
           Padding(
@@ -221,14 +234,14 @@ class HomeState extends State<Home> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : permitData.isEmpty
+          : permitData.isEmpty && permit == null
               ? Animate(
                   effects: const [
                     FadeEffect(),
                   ],
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'You are not logged in.',
+                      tokens.isEmpty ? 'You are not logged in.' : 'ape',
                     ),
                   ),
                 )
@@ -258,9 +271,12 @@ class HomeState extends State<Home> {
                                       horizontal: 10),
                                   child: Row(
                                     children: [
-                                      Text(
-                                        'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
-                                      ),
+                                      activeVehicle != null
+                                          ? Text(
+                                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
+                                            )
+                                          : const Text(
+                                              'Permit is not currently assigned to a vehicle.'),
                                     ],
                                   ),
                                 ),
@@ -360,7 +376,7 @@ class HomeState extends State<Home> {
                                                     vehicle.id.toString())
                                                 .toList();
                                             await prefs.setStringList(
-                                                'orderedVehicleIds',
+                                                permit!.id.toString(),
                                                 orderedVehicleIds);
                                             if (mounted) {
                                               setState(() {
@@ -427,12 +443,55 @@ class HomeState extends State<Home> {
                             ),
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: miniPermits.length,
-                          itemBuilder: (content, index) {
-                            // Coming soon:
-                            return const SizedBox.shrink();
-                          },
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount: miniPermits.length,
+                                  itemBuilder: (content, index) {
+                                    return Animate(
+                                      effects: const [SlideEffect()],
+                                      child: GestureDetector(
+                                        child: MiniPermitCard(
+                                            miniPermit: miniPermits[index]),
+                                        onTap: () async {
+                                          setState(() {
+                                            isLoading = true;
+                                          });
+                                          permit = await Api().getPermit(
+                                            miniPermits[index].id.toString(),
+                                            tokens[1],
+                                            tokens[2],
+                                            tokens[3],
+                                            orderedVehicleIds.isNotEmpty,
+                                          );
+                                          if (permit == null ||
+                                              permit!.vehicles.isNotEmpty) {
+                                            try {
+                                              activeVehicle = permit!.vehicles
+                                                  .firstWhere((vehicle) =>
+                                                      vehicle.isActive == true);
+                                            } catch (e) {
+                                              activeVehicle = null;
+                                            }
+                                          }
+                                          miniPermits.clear();
+                                          if (mounted) {
+                                            setState(() {
+                                              firstPass = false;
+                                              isLoading = false;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
     );
   }

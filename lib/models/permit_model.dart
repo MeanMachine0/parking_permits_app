@@ -1766,9 +1766,9 @@ class Vehicle {
     });
   }
 
-  static void sortByCustom(List<Vehicle> vehicles) async {
+  static void sortByCustom(List<Vehicle> vehicles, String permitId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> orderedVehicleIds = prefs.getStringList('orderedVehicleIds')!;
+    List<String> orderedVehicleIds = prefs.getStringList(permitId)!;
     Map<int, int> orderedVehicleIdsToIndices = {};
     for (int i = 0; i < orderedVehicleIds.length; i++) {
       orderedVehicleIdsToIndices[int.parse(orderedVehicleIds[i])] = i;

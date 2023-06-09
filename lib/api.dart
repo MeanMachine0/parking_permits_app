@@ -106,7 +106,7 @@ class Api {
       'pagedSearchDetails': {
         'pageSize': firstOnly ? 1 : 1000,
         'pageNumber': 1,
-        'orderBy': 'permitNumber',
+        'orderBy': 'expiryDate',
         'isAscending': false
       }
     };
@@ -166,7 +166,14 @@ class Api {
             prefs.getBool('${vehicle.id}IsFavourite') ?? false;
       }
       if (customSort) {
-        Vehicle.sortByCustom(permit.vehicles);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        bool previouslySorted =
+            prefs.getStringList(permitId.toString()) != null;
+        if (previouslySorted) {
+          Vehicle.sortByCustom(permit.vehicles, permitId);
+        } else {
+          Vehicle.sortByIsFavourite(permit.vehicles);
+        }
       } else {
         Vehicle.sortByIsFavourite(permit.vehicles);
       }
