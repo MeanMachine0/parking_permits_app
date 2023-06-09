@@ -284,7 +284,9 @@ class HomeState extends State<Home> {
                                                 permit!.vehicles.length;
                                             permit = await Api()
                                                     .addVehicleToPermit(
-                                                        vrm.replaceAll(' ', ''),
+                                                        vrm
+                                                            .replaceAll(' ', '')
+                                                            .toUpperCase(),
                                                         permit!,
                                                         tokens[1],
                                                         tokens[2],

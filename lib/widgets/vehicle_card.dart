@@ -112,7 +112,7 @@ class VehicleCard extends StatelessWidget {
                           decoration: const InputDecoration(labelText: 'Vrm'),
                           controller: TextEditingController(text: _vehicle.vrm),
                           onSubmitted: (newVrm) async {
-                            newVrm = newVrm.replaceAll(' ', '');
+                            newVrm = newVrm.replaceAll(' ', '').toUpperCase();
                             if (newVrm != _vehicle.vrm) {
                               _editVehicleVrm(_vehicle, newVrm);
                             }
