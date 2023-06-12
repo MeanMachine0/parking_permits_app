@@ -31,6 +31,7 @@ class HomeState extends State<Home> {
   DateTime? expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
+  String? email;
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class HomeState extends State<Home> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      email = prefs.getString('email');
       detailedView = prefs.getBool('detailedView') ?? false;
       isReorderable = prefs.getBool('isReorderable') ?? false;
       tokens = prefs.getStringList('tokens') ?? [];
@@ -137,7 +139,10 @@ class HomeState extends State<Home> {
     if (success) {
       oldVehicle.vrm = newVehicleVrm;
       if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
+      oldVehicle.message = 'Success!';
       selectedIndex = permit!.vehicles.indexOf(oldVehicle);
+    } else {
+      oldVehicle.message = 'Failed to edit vrm!';
     }
     setState(() {
       isLoading = false;
@@ -196,7 +201,7 @@ class HomeState extends State<Home> {
         title: miniPermits.isNotEmpty
             ? const Text('My Permits')
             : !firstPass
-                ? Text(permit?.permitNumber ?? 'Ape')
+                ? Text(permit?.permitNumber ?? 'Permit not found')
                 : permit?.address.pafAddress.buildingName == '' &&
                         permit?.address.street != ''
                     ? Text(
@@ -214,10 +219,12 @@ class HomeState extends State<Home> {
                   isLoading = true;
                 });
                 if (tokens.isEmpty) {
-                  await Navigator.of(context).push(
+                  bool success = await Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const Login())) ??
-                      [];
-                  getData();
+                      false;
+                  if (success) {
+                    getData();
+                  }
                 } else {
                   logout();
                 }
@@ -241,7 +248,9 @@ class HomeState extends State<Home> {
                   ],
                   child: Center(
                     child: Text(
-                      tokens.isEmpty ? 'You are not logged in.' : 'ape',
+                      tokens.isEmpty
+                          ? 'You are not logged in.'
+                          : 'Logged in as $email',
                     ),
                   ),
                 )
@@ -273,7 +282,7 @@ class HomeState extends State<Home> {
                                     children: [
                                       activeVehicle != null
                                           ? Text(
-                                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != '' ? ' - ${activeVehicle!.note}' : ''}',
+                                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != null ? ' - ${activeVehicle!.note}' : ''}',
                                             )
                                           : const Text(
                                               'Permit is not currently assigned to a vehicle.'),
@@ -330,8 +339,8 @@ class HomeState extends State<Home> {
                                               const EdgeInsets.only(left: 10),
                                           child: Text(
                                             addVehicleFailure!
-                                                ? 'Failed'
-                                                : 'Success',
+                                                ? 'Failed!'
+                                                : 'Success!',
                                             style: TextStyle(
                                               color: addVehicleFailure!
                                                   ? Colours.red
