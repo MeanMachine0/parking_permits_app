@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
@@ -10,7 +11,7 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  late bool isLoading, isReorderable, detailedView;
+  late bool isLoading, bioAuthSupport, useBioAuth, detailedView, isReorderable;
   List<String>? tokens;
   String? email;
   late String dateFormat;
@@ -28,6 +29,8 @@ class SettingsState extends State<Settings> {
       });
     }
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    bioAuthSupport = await LocalAuthentication().isDeviceSupported();
+    useBioAuth = prefs.getBool('useBioAuth') ?? bioAuthSupport;
     detailedView = prefs.getBool('detailedView') ?? false;
     isReorderable = prefs.getBool('isReorderable') ?? false;
     dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
@@ -56,6 +59,19 @@ class SettingsState extends State<Settings> {
               ],
               child: Column(
                 children: [
+                  if (bioAuthSupport)
+                    CheckboxListTile(
+                      title: const Text('Biometric Authentication'),
+                      value: useBioAuth,
+                      onChanged: (newValue) async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        prefs.setBool('useBioAuth', newValue!);
+                        setState(() {
+                          useBioAuth = newValue;
+                        });
+                      },
+                    ),
                   CheckboxListTile(
                     title: const Text('Detailed View'),
                     value: detailedView,
@@ -64,7 +80,7 @@ class SettingsState extends State<Settings> {
                           await SharedPreferences.getInstance();
                       prefs.setBool('detailedView', newValue!);
                       setState(() {
-                        detailedView = !detailedView;
+                        detailedView = newValue;
                       });
                     },
                   ),
@@ -76,7 +92,7 @@ class SettingsState extends State<Settings> {
                           await SharedPreferences.getInstance();
                       prefs.setBool('isReorderable', newValue!);
                       setState(() {
-                        isReorderable = !isReorderable;
+                        isReorderable = newValue;
                       });
                     },
                   ),
