@@ -10,10 +10,10 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  bool isLoading = false, isReorderable = false;
-  bool? detailedView;
+  bool isLoading = false, isReorderable = false, detailedView = false;
   List<String>? tokens;
   String? email;
+  String dateFormat = '';
 
   @override
   void initState() {
@@ -28,15 +28,12 @@ class SettingsState extends State<Settings> {
       });
     }
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    detailedView = prefs.getBool('detailedView');
+    detailedView = prefs.getBool('detailedView') ?? false;
     isReorderable = prefs.getBool('isReorderable') ?? false;
+    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
     tokens = prefs.getStringList('tokens');
     if (tokens != null) {
       email = prefs.getString('email');
-    }
-    if (detailedView == null) {
-      await prefs.setBool('detailedView', false);
-      detailedView = false;
     }
     if (mounted) {
       setState(() {
@@ -67,7 +64,7 @@ class SettingsState extends State<Settings> {
                           await SharedPreferences.getInstance();
                       prefs.setBool('detailedView', newValue!);
                       setState(() {
-                        detailedView = !detailedView!;
+                        detailedView = !detailedView;
                       });
                     },
                   ),
@@ -82,6 +79,31 @@ class SettingsState extends State<Settings> {
                         isReorderable = !isReorderable;
                       });
                     },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: DropdownButtonFormField(
+                      value: dateFormat,
+                      decoration:
+                          const InputDecoration(labelText: 'Date Format'),
+                      items: ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy/MM/dd']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (newDateFormat) async {
+                        if (newDateFormat != dateFormat) {
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          await prefs.setString('dateFormat', newDateFormat!);
+                          setState(() {
+                            dateFormat = newDateFormat;
+                          });
+                        }
+                      },
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
