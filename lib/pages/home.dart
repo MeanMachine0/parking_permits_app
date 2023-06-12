@@ -137,8 +137,8 @@ class HomeState extends State<Home> {
     if (success) {
       oldVehicle.vrm = newVehicleVrm;
       if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
+      selectedIndex = permit!.vehicles.indexOf(oldVehicle);
     }
-    selectedIndex = -1;
     setState(() {
       isLoading = false;
     });
