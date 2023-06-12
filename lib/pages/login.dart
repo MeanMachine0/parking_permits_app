@@ -43,7 +43,13 @@ class LoginState extends State<Login> {
       email = prefs.getString('email');
       if (email != null) {
         auth = LocalAuthentication();
-        useBioAuth = await auth!.isDeviceSupported();
+        await auth!.isDeviceSupported().then(
+          (bioAuthSupport) {
+            if (bioAuthSupport) {
+              useBioAuth = prefs.getBool('useBioAuth') ?? true;
+            }
+          },
+        );
         if (useBioAuth) {
           bool authenticated = await auth!.authenticate(
               localizedReason: 'Login as $email',
