@@ -4,13 +4,12 @@ import 'constants.dart';
 import 'pages/base.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ParkingPermitsApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ParkingPermitsApp extends StatelessWidget {
+  const ParkingPermitsApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
