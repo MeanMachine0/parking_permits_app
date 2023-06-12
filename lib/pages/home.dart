@@ -31,7 +31,7 @@ class HomeState extends State<Home> {
   DateTime? expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
-  String? email;
+  String? email, dateFormat;
 
   @override
   void initState() {
@@ -48,6 +48,7 @@ class HomeState extends State<Home> {
       email = prefs.getString('email');
       detailedView = prefs.getBool('detailedView') ?? false;
       isReorderable = prefs.getBool('isReorderable') ?? false;
+      dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
@@ -461,7 +462,9 @@ class HomeState extends State<Home> {
                                       effects: const [SlideEffect()],
                                       child: GestureDetector(
                                         child: MiniPermitCard(
-                                            miniPermit: miniPermits[index]),
+                                          miniPermit: miniPermits[index],
+                                          dateFormat: dateFormat!,
+                                        ),
                                         onTap: () async {
                                           setState(() {
                                             isLoading = true;
