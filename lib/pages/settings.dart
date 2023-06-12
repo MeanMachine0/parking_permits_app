@@ -10,10 +10,10 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  bool isLoading = false, isReorderable = false, detailedView = false;
+  late bool isLoading, isReorderable, detailedView;
   List<String>? tokens;
   String? email;
-  String dateFormat = '';
+  late String dateFormat;
 
   @override
   void initState() {

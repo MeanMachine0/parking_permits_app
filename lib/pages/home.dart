@@ -18,20 +18,18 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false,
-      failure = false,
-      isReorderable = false,
-      detailedView = false,
-      firstPass = true;
+  bool isLoading = false, failure = false, firstPass = true;
+  late bool detailedView, isReorderable;
   bool? addVehicleFailure;
   List<String> tokens = [], orderedVehicleIds = [];
   List permitData = [];
   PermitModel? permit;
   List<MiniPermitModel> miniPermits = [];
-  DateTime? expiry;
+  late DateTime expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
-  String? email, dateFormat;
+  String? email;
+  late String dateFormat;
 
   @override
   void initState() {
@@ -463,7 +461,7 @@ class HomeState extends State<Home> {
                                       child: GestureDetector(
                                         child: MiniPermitCard(
                                           miniPermit: miniPermits[index],
-                                          dateFormat: dateFormat!,
+                                          dateFormat: dateFormat,
                                         ),
                                         onTap: () async {
                                           setState(() {

@@ -21,7 +21,7 @@ class LoginState extends State<Login> {
       passVis = true,
       displayLoginError = false;
   List<String> tokens = [];
-  String email = '';
+  String? email;
 
   @override
   void initState() {
@@ -36,8 +36,8 @@ class LoginState extends State<Login> {
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
-      email = prefs.getString('email') ?? '';
-      emailController.text = email;
+      email = prefs.getString('email');
+      emailController.text = email ?? '';
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -53,11 +53,10 @@ class LoginState extends State<Login> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      Api api = Api();
-      tokens = await api.login(emailController.text, passwordController.text);
+      tokens = await Api().login(email!, passwordController.text);
       await prefs.setStringList('tokens', tokens);
       if (tokens.isNotEmpty) {
-        await prefs.setString('email', email);
+        await prefs.setString('email', email!);
         // ignore: use_build_context_synchronously
         Navigator.pop(context, true);
       } else {
