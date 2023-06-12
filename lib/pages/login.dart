@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:parking_permits_app/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,9 +21,11 @@ class LoginState extends State<Login> {
   bool isLoading = false,
       hasAuthenticationCookies = false,
       passVis = true,
-      displayLoginError = false;
+      displayLoginError = false,
+      useBioAuth = false;
   List<String> tokens = [];
-  String? email;
+  String? email, password;
+  LocalAuthentication? auth;
 
   @override
   void initState() {
@@ -37,6 +41,20 @@ class LoginState extends State<Login> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
       email = prefs.getString('email');
+      if (email != null) {
+        auth = LocalAuthentication();
+        useBioAuth = await auth!.isDeviceSupported();
+        if (useBioAuth) {
+          bool authenticated = await auth!.authenticate(
+              localizedReason: 'Login as $email',
+              options: const AuthenticationOptions());
+          if (authenticated) {
+            var secureStorage = const FlutterSecureStorage();
+            password = await secureStorage.read(key: 'password');
+            login(email!, password!);
+          }
+        }
+      }
       emailController.text = email ?? '';
       if (mounted) {
         setState(() {
@@ -46,17 +64,18 @@ class LoginState extends State<Login> {
     }
   }
 
-  void login() async {
-    email = emailController.text;
+  void login(String email, String password) async {
     if (mounted) {
       setState(() {
         isLoading = true;
       });
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      tokens = await Api().login(email!, passwordController.text);
-      await prefs.setStringList('tokens', tokens);
+      tokens = await Api().login(email, password);
       if (tokens.isNotEmpty) {
-        await prefs.setString('email', email!);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('tokens', tokens);
+        await prefs.setString('email', email);
+        var secureStorage = const FlutterSecureStorage();
+        await secureStorage.write(key: 'password', value: password);
         // ignore: use_build_context_synchronously
         Navigator.pop(context, true);
       } else {
@@ -156,7 +175,8 @@ class LoginState extends State<Login> {
                                 onPressed: () async {
                                   loginFormKey.currentState!.save();
                                   if (loginFormKey.currentState!.validate()) {
-                                    login();
+                                    login(emailController.text,
+                                        passwordController.text);
                                   }
                                 },
                                 child: const Text('Login'),
