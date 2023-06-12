@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../constants.dart';
 import '../models/permit_model.dart';
 
 class VehicleCard extends StatelessWidget {
@@ -43,7 +44,7 @@ class VehicleCard extends StatelessWidget {
                       fontSize: 18,
                     ),
                   ),
-                  if (_vehicle.note != '')
+                  if (_vehicle.note != null)
                     Expanded(
                       child: Text(
                         ' - ${_vehicle.note}',
@@ -91,7 +92,7 @@ class VehicleCard extends StatelessWidget {
                         child: TextField(
                           decoration: const InputDecoration(labelText: 'Note'),
                           controller:
-                              TextEditingController(text: _vehicle.note),
+                              TextEditingController(text: _vehicle.note ?? ''),
                           onSubmitted: (newNote) async {
                             _updateVehicleNote(_vehicle, newNote);
                           },
@@ -129,16 +130,25 @@ class VehicleCard extends StatelessWidget {
                     effects: const [
                       FadeEffect(),
                     ],
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            _assignPermit(_vehicle);
-                          },
-                          child: const Text('Assign permit'),
-                        ),
-                      ],
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _assignPermit(_vehicle);
+                      },
+                      child: const Text('Assign permit'),
+                    ),
+                  ),
+                ),
+              if (_isSelected && _vehicle.message != null)
+                Center(
+                  child: Animate(
+                    effects: const [FadeEffect()],
+                    child: Text(
+                      _vehicle.message!,
+                      style: TextStyle(
+                        color: _vehicle.message!.contains('Success')
+                            ? Colors.green
+                            : Colours.red,
+                      ),
                     ),
                   ),
                 ),
