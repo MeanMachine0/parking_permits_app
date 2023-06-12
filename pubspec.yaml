@@ -39,6 +39,7 @@ dependencies:
   dio: ^5.1.2
   html: ^0.15.3
   flutter_animate: ^4.1.1+1
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:
