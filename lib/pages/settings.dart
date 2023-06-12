@@ -12,6 +12,8 @@ class Settings extends StatefulWidget {
 class SettingsState extends State<Settings> {
   bool isLoading = false, isReorderable = false;
   bool? detailedView;
+  List<String>? tokens;
+  String? email;
 
   @override
   void initState() {
@@ -28,6 +30,10 @@ class SettingsState extends State<Settings> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     detailedView = prefs.getBool('detailedView');
     isReorderable = prefs.getBool('isReorderable') ?? false;
+    tokens = prefs.getStringList('tokens');
+    if (tokens != null) {
+      email = prefs.getString('email');
+    }
     if (detailedView == null) {
       await prefs.setBool('detailedView', false);
       detailedView = false;
@@ -87,6 +93,8 @@ class SettingsState extends State<Settings> {
                         setState(() {
                           detailedView = false;
                           isReorderable = false;
+                          tokens = null;
+                          email = null;
                         });
                       },
                       child: const Text(
@@ -94,6 +102,7 @@ class SettingsState extends State<Settings> {
                       ),
                     ),
                   ),
+                  Text(email ?? 'Not logged in'),
                 ],
               ),
             ),
