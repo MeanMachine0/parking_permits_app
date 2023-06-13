@@ -61,7 +61,7 @@ class SettingsState extends State<Settings> {
                 children: [
                   if (bioAuthSupport)
                     CheckboxListTile(
-                      title: const Text('Biometric Authentication'),
+                      title: const Text('Local/Biometric Authentication'),
                       value: useBioAuth,
                       onChanged: (newValue) async {
                         SharedPreferences prefs =
