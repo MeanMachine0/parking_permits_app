@@ -467,6 +467,15 @@ class HomeState extends State<Home> {
                                           setState(() {
                                             isLoading = true;
                                           });
+                                          SharedPreferences prefs =
+                                              await SharedPreferences
+                                                  .getInstance();
+                                          orderedVehicleIds =
+                                              prefs.getStringList(
+                                                      miniPermits[index]
+                                                          .id
+                                                          .toString()) ??
+                                                  [];
                                           permit = await Api().getPermit(
                                             miniPermits[index].id.toString(),
                                             tokens[1],
