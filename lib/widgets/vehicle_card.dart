@@ -44,7 +44,8 @@ class VehicleCard extends StatelessWidget {
                       fontSize: 18,
                     ),
                   ),
-                  if (_vehicle.note != null)
+                  if (_vehicle.note != null &&
+                      _vehicle.note!.replaceAll(' ', '') != '')
                     Expanded(
                       child: Text(
                         ' - ${_vehicle.note}',

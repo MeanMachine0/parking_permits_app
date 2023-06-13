@@ -281,7 +281,7 @@ class HomeState extends State<Home> {
                                     children: [
                                       activeVehicle != null
                                           ? Text(
-                                              'Permit assigned to ${activeVehicle!.vrm}${activeVehicle!.note != null ? ' - ${activeVehicle!.note}' : ''}',
+                                              'Permit assigned to ${activeVehicle!.vrm}${(activeVehicle!.note != null && activeVehicle!.note!.replaceAll(' ', '') != '') ? ' - ${activeVehicle!.note}' : ''}',
                                             )
                                           : const Text(
                                               'Permit is not currently assigned to a vehicle.'),
