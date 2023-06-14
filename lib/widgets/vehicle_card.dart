@@ -59,7 +59,7 @@ class VehicleCard extends StatelessWidget {
                   if (_vehicle.isActive)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
-                      color: Colors.green,
+                      color: Colours.green,
                       alignment: Alignment.centerRight,
                       child: const Text(
                         'PERMIT ASSIGNED',
@@ -149,7 +149,7 @@ class VehicleCard extends StatelessWidget {
                       _vehicle.message!,
                       style: TextStyle(
                         color: _vehicle.message!.contains('Success')
-                            ? Colors.green
+                            ? Colours.green
                             : Colours.red,
                       ),
                     ),
