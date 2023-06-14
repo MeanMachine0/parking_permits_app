@@ -18,7 +18,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false, failure = false, firstPass = true;
+  bool isLoading = false, isLoading1 = false, failure = false, firstPass = true;
   late bool detailedView, isReorderable;
   bool? addVehicleFailure;
   List<String> tokens = [], orderedVehicleIds = [];
@@ -75,6 +75,7 @@ class HomeState extends State<Home> {
       if (mounted) {
         setState(() {
           isLoading = false;
+          isLoading1 = false;
         });
       }
     }
@@ -221,7 +222,10 @@ class HomeState extends State<Home> {
                   bool success = await Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const Login())) ??
                       false;
-                  if (success) {
+                  if (success && mounted) {
+                    setState(() {
+                      isLoading1 = true;
+                    });
                     getData();
                   }
                 } else {
@@ -238,7 +242,7 @@ class HomeState extends State<Home> {
           ),
         ],
       ),
-      body: isLoading
+      body: isLoading || isLoading1
           ? const Center(child: CircularProgressIndicator())
           : permitData.isEmpty && permit == null
               ? Animate(
