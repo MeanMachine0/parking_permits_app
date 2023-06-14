@@ -19,7 +19,7 @@ class LoginState extends State<Login> {
   TextEditingController emailController = TextEditingController(),
       passwordController = TextEditingController();
   bool isLoading = false,
-      isLoading2 = false,
+      isLoading1 = false,
       hasAuthenticationCookies = false,
       passVis = true,
       displayLoginError = false,
@@ -74,7 +74,7 @@ class LoginState extends State<Login> {
   void login(String email, String password) async {
     if (mounted) {
       setState(() {
-        isLoading2 = true;
+        isLoading1 = true;
       });
       tokens = await Api().login(email, password);
       if (tokens.isNotEmpty) {
@@ -91,7 +91,7 @@ class LoginState extends State<Login> {
     }
     if (mounted) {
       setState(() {
-        isLoading2 = false;
+        isLoading1 = false;
       });
     }
   }
@@ -100,7 +100,7 @@ class LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: const Text('Login')),
-        body: isLoading || isLoading2
+        body: isLoading || isLoading1
             ? const Center(
                 child: CircularProgressIndicator(),
               )
