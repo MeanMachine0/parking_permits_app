@@ -28,7 +28,7 @@ class HomeState extends State<Home> {
   late DateTime expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
-  String? email;
+  String? email, message;
   late String dateFormat;
 
   @override
@@ -63,6 +63,7 @@ class HomeState extends State<Home> {
                 );
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
+        message = "Your session has expired; please login again.";
       } else if (permitData.isNotEmpty && permitData[0] == false) {
         failure = true;
       } else if (permitData.isNotEmpty && !detailedView) {
@@ -82,16 +83,17 @@ class HomeState extends State<Home> {
   }
 
   void logout() async {
+    tokens.clear();
+    permitData.clear();
+    permit = null;
+    miniPermits.clear();
+    selectedIndex = -1;
+    failure = false;
+    addVehicleFailure = null;
+    message = null;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('tokens');
-    setState(() {
-      tokens.clear();
-      permitData.clear();
-      permit = null;
-      miniPermits.clear();
-      selectedIndex = -1;
-      failure = false;
-    });
+    setState(() {});
   }
 
   void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
@@ -233,11 +235,10 @@ class HomeState extends State<Home> {
                   }
                 } else {
                   logout();
-                }
-                if (mounted) {
-                  setState(() {
+                  if (mounted) {
                     isLoading = false;
-                  });
+                    setState(() {});
+                  }
                 }
               },
               child: Text(tokens.isEmpty ? 'Login' : 'Logout'),
@@ -254,9 +255,10 @@ class HomeState extends State<Home> {
                   ],
                   child: Center(
                     child: Text(
-                      tokens.isEmpty
-                          ? 'You are not logged in.'
-                          : 'Logged in as $email',
+                      message ??
+                          (tokens.isEmpty
+                              ? 'You are not logged in.'
+                              : 'Logged in as $email'),
                     ),
                   ),
                 )
