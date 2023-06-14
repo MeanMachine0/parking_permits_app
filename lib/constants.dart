@@ -9,6 +9,7 @@ class Colours {
   static const lightGray = Color.fromARGB(255, 224, 224, 224);
   static const amber = Colors.amber;
   static const black = Colors.black;
+  static const green = Colors.green;
   static const red = Color.fromARGB(255, 255, 0, 0);
   static const deepBlue = Color.fromARGB(255, 0, 0, 44);
 }
