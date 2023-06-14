@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
+import '../constants.dart';
 import '../models/mini_permit_model.dart';
 
 class MiniPermitCard extends StatelessWidget {
@@ -28,7 +29,10 @@ class MiniPermitCard extends StatelessWidget {
               Text(_miniPermit.permitNumber),
               Text(_miniPermit.permitType),
               Text(
-                  'Expire${_miniPermit.isExpired ? 'd' : 's'} on ${DateFormat(_dateFormat).format(_miniPermit.expiryDate)}'),
+                  '${_miniPermit.isExpired ? 'Expired on' : 'Valid until'} ${DateFormat(_dateFormat).format(_miniPermit.expiryDate)}',
+                  style: TextStyle(
+                    color: _miniPermit.isExpired ? Colours.red : Colours.green,
+                  )),
             ],
           ),
         ),
