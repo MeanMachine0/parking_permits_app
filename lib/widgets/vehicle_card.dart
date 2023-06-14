@@ -9,19 +9,21 @@ class VehicleCard extends StatelessWidget {
     super.key,
     required Vehicle vehicle,
     required bool isSelected,
+    required bool permitHasNotExpired,
     required Function(Vehicle, String) updateVehicleNote,
     required Function(Vehicle) assignPermit,
     required Function(Vehicle, String) editVehicleVrm,
     required Function(Vehicle, bool) toggleVehicleIsFavourite,
   })  : _vehicle = vehicle,
         _isSelected = isSelected,
+        _permitHasNotExpired = permitHasNotExpired,
         _updateVehicleNote = updateVehicleNote,
         _assignPermit = assignPermit,
         _editVehicleVrm = editVehicleVrm,
         _toggleVehicleIsFavourite = toggleVehicleIsFavourite;
 
   final Vehicle _vehicle;
-  final bool _isSelected;
+  final bool _isSelected, _permitHasNotExpired;
   final Function(Vehicle, String) _updateVehicleNote, _editVehicleVrm;
   final Function(Vehicle) _assignPermit;
   final Function(Vehicle, bool) _toggleVehicleIsFavourite;
@@ -102,7 +104,7 @@ class VehicleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              if (_isSelected)
+              if (_isSelected && _permitHasNotExpired)
                 Animate(
                   effects: const [
                     FadeEffect(),
@@ -124,7 +126,7 @@ class VehicleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              if (_isSelected && !_vehicle.isActive)
+              if (_isSelected && !_vehicle.isActive && _permitHasNotExpired)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Animate(

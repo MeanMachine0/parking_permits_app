@@ -166,6 +166,7 @@ class HomeState extends State<Home> {
       child: VehicleCard(
         vehicle: vehicle,
         isSelected: index == selectedIndex,
+        permitHasNotExpired: !permit!.isExpired,
         updateVehicleNote: updateVehicleNoteCallback,
         editVehicleVrm: editVehicleVrmCallback,
         assignPermit: assignPermitCallback,
@@ -192,7 +193,9 @@ class HomeState extends State<Home> {
         leading: !firstPass && miniPermits.isEmpty && tokens.isNotEmpty
             ? IconButton(
                 onPressed: () {
+                  selectedIndex = -1;
                   permit = null;
+                  addVehicleFailure = null;
                   firstPass = true;
                   getData();
                 },
@@ -292,69 +295,71 @@ class HomeState extends State<Home> {
                                     ],
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          decoration: const InputDecoration(
-                                              label: Text(
-                                            'Add vehicle to permit (vrm)',
-                                            textAlign: TextAlign.center,
-                                          )),
-                                          onSubmitted: (vrm) async {
-                                            setState(() {
-                                              isLoading = true;
-                                            });
-                                            int numVehiclesBefore =
-                                                permit!.vehicles.length;
-                                            permit = await Api()
-                                                    .addVehicleToPermit(
-                                                        vrm
-                                                            .replaceAll(' ', '')
-                                                            .toUpperCase(),
-                                                        permit!,
-                                                        tokens[1],
-                                                        tokens[2],
-                                                        tokens[3],
-                                                        orderedVehicleIds
-                                                            .isNotEmpty) ??
-                                                permit;
-                                            if (numVehiclesBefore ==
-                                                permit!.vehicles.length) {
-                                              addVehicleFailure = true;
-                                            } else {
-                                              addVehicleFailure = false;
-                                            }
-                                            if (mounted) {
+                                if (!permit!.isExpired)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            decoration: const InputDecoration(
+                                                label: Text(
+                                              'Add vehicle to permit (vrm)',
+                                              textAlign: TextAlign.center,
+                                            )),
+                                            onSubmitted: (vrm) async {
                                               setState(() {
-                                                isLoading = false;
+                                                isLoading = true;
                                               });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      if (addVehicleFailure != null)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsets.only(left: 10),
-                                          child: Text(
-                                            addVehicleFailure!
-                                                ? 'Failed!'
-                                                : 'Success!',
-                                            style: TextStyle(
-                                              color: addVehicleFailure!
-                                                  ? Colours.red
-                                                  : Colors.green,
-                                              fontSize: 18,
-                                            ),
+                                              int numVehiclesBefore =
+                                                  permit!.vehicles.length;
+                                              permit = await Api()
+                                                      .addVehicleToPermit(
+                                                          vrm
+                                                              .replaceAll(
+                                                                  ' ', '')
+                                                              .toUpperCase(),
+                                                          permit!,
+                                                          tokens[1],
+                                                          tokens[2],
+                                                          tokens[3],
+                                                          orderedVehicleIds
+                                                              .isNotEmpty) ??
+                                                  permit;
+                                              if (numVehiclesBefore ==
+                                                  permit!.vehicles.length) {
+                                                addVehicleFailure = true;
+                                              } else {
+                                                addVehicleFailure = false;
+                                              }
+                                              if (mounted) {
+                                                setState(() {
+                                                  isLoading = false;
+                                                });
+                                              }
+                                            },
                                           ),
                                         ),
-                                    ],
+                                        if (addVehicleFailure != null)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 10),
+                                            child: Text(
+                                              addVehicleFailure!
+                                                  ? 'Failed!'
+                                                  : 'Success!',
+                                              style: TextStyle(
+                                                color: addVehicleFailure!
+                                                    ? Colours.red
+                                                    : Colors.green,
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                ),
                                 const SizedBox(height: 10),
                                 Expanded(
                                   child: isReorderable
