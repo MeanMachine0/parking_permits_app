@@ -30,6 +30,12 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TextEditingController noteController =
+        TextEditingController(text: _vehicle.note ?? '');
+    ValueNotifier<bool> noteHasUnsavedChanges = ValueNotifier(false);
+    TextEditingController vrmController =
+        TextEditingController(text: _vehicle.vrm);
+    ValueNotifier<bool> vrmHasUnsavedChanges = ValueNotifier(false);
     return Card(
       elevation: 4,
       child: Padding(
@@ -92,12 +98,43 @@ class VehicleCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(labelText: 'Note'),
-                          controller:
-                              TextEditingController(text: _vehicle.note ?? ''),
-                          onSubmitted: (newNote) async {
-                            _updateVehicleNote(_vehicle, newNote);
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: noteHasUnsavedChanges,
+                          builder: (context, value, child) {
+                            return TextField(
+                              controller: noteController,
+                              decoration: value
+                                  ? InputDecoration(
+                                      labelText: 'Note (unsaved changes)',
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(
+                                          Icons.check,
+                                          color: Colours.green,
+                                        ),
+                                        onPressed: () async {
+                                          if (noteController.text !=
+                                              _vehicle.note) {
+                                            _updateVehicleNote(
+                                                _vehicle, noteController.text);
+                                          }
+                                        },
+                                      ),
+                                    )
+                                  : const InputDecoration(labelText: 'Note'),
+                              onChanged: (newNote) {
+                                if (newNote != _vehicle.note) {
+                                  noteHasUnsavedChanges.value = true;
+                                } else {
+                                  noteHasUnsavedChanges.value = false;
+                                }
+                              },
+                              onSubmitted: (newNote) async {
+                                noteHasUnsavedChanges.value = false;
+                                if (noteController.text != _vehicle.note) {
+                                  _updateVehicleNote(_vehicle, newNote);
+                                }
+                              },
+                            );
                           },
                         ),
                       ),
@@ -112,16 +149,51 @@ class VehicleCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(labelText: 'Vrm'),
-                          controller: TextEditingController(text: _vehicle.vrm),
-                          onSubmitted: (newVrm) async {
-                            newVrm = newVrm.replaceAll(' ', '').toUpperCase();
-                            if (newVrm != _vehicle.vrm) {
-                              _editVehicleVrm(_vehicle, newVrm);
-                            }
-                          },
-                        ),
+                        child: ValueListenableBuilder<bool>(
+                            valueListenable: vrmHasUnsavedChanges,
+                            builder: (context, value, child) {
+                              return TextField(
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                  controller: vrmController,
+                                  decoration: value
+                                      ? InputDecoration(
+                                          labelText: 'Vrm (unsaved changes)',
+                                          suffixIcon: IconButton(
+                                            icon: const Icon(
+                                              Icons.check,
+                                              color: Colours.green,
+                                            ),
+                                            onPressed: () async {
+                                              vrmController.text = vrmController
+                                                  .text
+                                                  .replaceAll(' ', '')
+                                                  .toUpperCase();
+                                              if (vrmController.text !=
+                                                  _vehicle.vrm) {
+                                                _editVehicleVrm(_vehicle,
+                                                    vrmController.text);
+                                              }
+                                            },
+                                          ),
+                                        )
+                                      : const InputDecoration(labelText: 'Vrm'),
+                                  onChanged: (newVrm) {
+                                    if (newVrm.toUpperCase() != _vehicle.vrm) {
+                                      vrmHasUnsavedChanges.value = true;
+                                    } else {
+                                      vrmHasUnsavedChanges.value = false;
+                                    }
+                                  },
+                                  onSubmitted: (newVrm) async {
+                                    newVrm = newVrm
+                                        .replaceAll(' ', '')
+                                        .toUpperCase();
+                                    if (newVrm != _vehicle.vrm) {
+                                      _editVehicleVrm(_vehicle, newVrm);
+                                    }
+                                  });
+                            }),
                       ),
                     ],
                   ),
