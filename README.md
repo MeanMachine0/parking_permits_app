@@ -28,6 +28,14 @@ tcarter parking_permits_app % firebase login
 Already logged in as tim.carter.home@gmail.com
 tcarter parking_permits_app % flutterfire configure
 
+### To build and install on a real iPhone/iPad
+Having trouble with FAD, use these steps:
+1. connect iPhone/iPad to dev mac with cable
+2. launch compatible xCode - need newer version for latest iOS
+3. wait for phone to be ready for development (e.g. deownload symbols)
+
+flutter run --release
+
 ### To build for Firebase App Distribution
 Some useful info at https://docs.flutter.dev/deployment/ios
 
@@ -54,3 +62,4 @@ Built /Users/tcarter/Development/FlutterProjects/parking_permits_app/build/ios/a
 Building development IPA...                                         9.6s
 Built IPA to /Users/tcarter/Development/FlutterProjects/parking_permits_app/build/ios/ipa.
 tcarter@R4PMH25R74 parking_permits_app % 
+
