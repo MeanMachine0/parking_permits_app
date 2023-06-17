@@ -313,7 +313,8 @@ class HomeState extends State<Home> {
                                       ],
                                     ),
                                   ),
-                                  if (!permit!.isExpired)
+                                  if (!permit!.isExpired &&
+                                      permit!.vehicles.length < 20)
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 10),
