@@ -39,7 +39,7 @@ dependencies:
   dio: ^5.1.2
   html: ^0.15.3
   flutter_animate: ^4.1.1+1
-  intl: ^0.17.0
+  intl: ^0.18.0
   local_auth: ^2.1.6
   flutter_secure_storage: ^8.0.0
   firebase_core: ^2.14.0
