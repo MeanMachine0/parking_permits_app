@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +18,7 @@ class SettingsState extends State<Settings> {
   List<String>? tokens;
   String? email;
   late String dateFormat;
+  User? user;
 
   @override
   void initState() {
@@ -44,6 +47,25 @@ class SettingsState extends State<Settings> {
         isLoading = false;
       });
     }
+  }
+
+  Future<AuthCredential?> googleSignIn() async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    final GoogleSignInAccount? googleAccount = await googleSignIn.signIn();
+    if (googleAccount == null) return null;
+    final GoogleSignInAuthentication googleAuth =
+        await googleAccount.authentication;
+    final AuthCredential authCredential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return authCredential;
+  }
+
+  Future<User?> firebaseSignIn(AuthCredential authCredential) async {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = (await auth.signInWithCredential(authCredential)).user;
+    return user;
   }
 
   @override
@@ -144,6 +166,20 @@ class SettingsState extends State<Settings> {
                     ),
                   ),
                   Text(email ?? 'Not logged in'),
+                  if (user == null)
+                    ElevatedButton(
+                      onPressed: () async {
+                        AuthCredential? authCredential = await googleSignIn();
+                        if (authCredential != null) {
+                          user = await firebaseSignIn(authCredential);
+                          setState(() {});
+                        }
+                      },
+                      child: const Text(
+                        'Sign in with Google to get more features',
+                      ),
+                    ),
+                  if (user != null) Text(user!.uid)
                 ],
               ),
             ),
