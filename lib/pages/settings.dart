@@ -18,6 +18,8 @@ class SettingsState extends State<Settings> {
   List<String>? tokens;
   String? email;
   late String dateFormat;
+  GoogleSignIn googleSignIn = GoogleSignIn();
+  FirebaseAuth auth = FirebaseAuth.instance;
   User? user;
 
   @override
@@ -42,6 +44,10 @@ class SettingsState extends State<Settings> {
     if (tokens != null) {
       email = prefs.getString('email');
     }
+    AuthCredential? authCredential = await loginGoogle();
+    if (authCredential != null) {
+      user = await loginFirebase(authCredential);
+    }
     if (mounted) {
       setState(() {
         isLoading = false;
@@ -49,9 +55,12 @@ class SettingsState extends State<Settings> {
     }
   }
 
-  Future<AuthCredential?> googleSignIn() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
-    final GoogleSignInAccount? googleAccount = await googleSignIn.signIn();
+  Future<AuthCredential?> loginGoogle({bool pressed = false}) async {
+    GoogleSignInAccount? googleAccount;
+    googleAccount = await googleSignIn.signInSilently();
+    if (pressed && googleAccount == null) {
+      googleAccount = await googleSignIn.signIn();
+    }
     if (googleAccount == null) return null;
     final GoogleSignInAuthentication googleAuth =
         await googleAccount.authentication;
@@ -62,9 +71,9 @@ class SettingsState extends State<Settings> {
     return authCredential;
   }
 
-  Future<User?> firebaseSignIn(AuthCredential authCredential) async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = (await auth.signInWithCredential(authCredential)).user;
+  Future<User?> loginFirebase(AuthCredential authCredential) async {
+    final User? user = auth.currentUser ??
+        (await auth.signInWithCredential(authCredential)).user;
     return user;
   }
 
@@ -169,9 +178,10 @@ class SettingsState extends State<Settings> {
                   if (user == null)
                     ElevatedButton(
                       onPressed: () async {
-                        AuthCredential? authCredential = await googleSignIn();
+                        AuthCredential? authCredential =
+                            await loginGoogle(pressed: true);
                         if (authCredential != null) {
-                          user = await firebaseSignIn(authCredential);
+                          user = await loginFirebase(authCredential);
                           setState(() {});
                         }
                       },
