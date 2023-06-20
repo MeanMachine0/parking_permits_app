@@ -68,13 +68,19 @@ class HomeState extends State<Home> {
                 dateFormat =
                     docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
               } else {
-                detailedView = prefs.getBool('detailedView') ?? false;
-                isReorderable = prefs.getBool('isReorderable') ?? false;
-                dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
+                getPrefs(prefs);
               }
+            } else {
+              getPrefs(prefs);
             }
+          } else {
+            getPrefs(prefs);
           }
+        } else {
+          getPrefs(prefs);
         }
+      } else {
+        getPrefs(prefs);
       }
       email = prefs.getString('email');
       tokens = prefs.getStringList('tokens') ?? [];
@@ -111,6 +117,12 @@ class HomeState extends State<Home> {
         });
       }
     }
+  }
+
+  void getPrefs(SharedPreferences prefs) {
+    detailedView = prefs.getBool('detailedView') ?? false;
+    isReorderable = prefs.getBool('isReorderable') ?? false;
+    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
   }
 
   void logout() async {

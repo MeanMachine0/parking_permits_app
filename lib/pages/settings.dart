@@ -60,15 +60,19 @@ class SettingsState extends State<Settings> {
               isReorderable = docData['preferences']['isReorderable'] ?? false;
               dateFormat = docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
             } else {
-              useBioOrLocalAuth =
-                  prefs.getBool('useBioOrLocalAuth') ?? bioAuthSupport;
-              detailedView = prefs.getBool('detailedView') ?? false;
-              isReorderable = prefs.getBool('isReorderable') ?? false;
-              dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
+              getPrefs(prefs);
             }
+          } else {
+            getPrefs(prefs);
           }
+        } else {
+          getPrefs(prefs);
         }
+      } else {
+        getPrefs(prefs);
       }
+    } else {
+      getPrefs(prefs);
     }
     tokens = prefs.getStringList('tokens');
     if (tokens != null) {
@@ -79,6 +83,13 @@ class SettingsState extends State<Settings> {
         isLoading = false;
       });
     }
+  }
+
+  void getPrefs(SharedPreferences prefs) {
+    useBioOrLocalAuth = prefs.getBool('useBioOrLocalAuth') ?? bioAuthSupport;
+    detailedView = prefs.getBool('detailedView') ?? false;
+    isReorderable = prefs.getBool('isReorderable') ?? false;
+    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
   }
 
   Future<AuthCredential?> loginGoogle({bool pressed = false}) async {
