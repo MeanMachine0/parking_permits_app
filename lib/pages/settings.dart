@@ -207,47 +207,64 @@ class SettingsState extends State<Settings> {
                       },
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (docRef != null) {
-                          await docRef!.delete();
-                          user = null;
-                        }
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        await prefs.clear();
-                        var secureStorage = const FlutterSecureStorage();
-                        await secureStorage.delete(key: 'password');
-                        setState(() {
-                          detailedView = false;
-                          isReorderable = false;
-                          tokens = null;
-                          email = null;
-                        });
-                      },
-                      child: const Text(
-                        'Delete user data',
-                      ),
-                    ),
+                  const Expanded(
+                    child: SizedBox(),
                   ),
-                  Text(email ?? 'Not logged in'),
-                  if (user == null)
-                    ElevatedButton(
-                      onPressed: () async {
+                  Text(email != null
+                      ? 'Logged in as $email'
+                      : 'Not logged in to parking account'),
+                  if (user != null)
+                    Text('Signed in to Google as ${user!.email}'),
+                  const SizedBox(height: 6),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
                         if (authCredential != null) {
                           user = await loginFirebase(authCredential);
+                          if (mounted) {
+                            setState(() {});
+                          }
+                        }
+                      } else {
+                        await googleSignIn.signOut();
+                        await auth.signOut();
+                        user = null;
+                        if (mounted) {
                           setState(() {});
                         }
-                      },
-                      child: const Text(
-                        'Sign in with Google to get more features',
-                      ),
+                      }
+                    },
+                    child: Text(
+                      user == null
+                          ? 'Sign in with Google to unlock more features'
+                          : 'Sign out of Google',
                     ),
-                  if (user != null) Text(user!.uid)
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (docRef != null) {
+                        await docRef!.delete();
+                        user = null;
+                      }
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      await prefs.clear();
+                      var secureStorage = const FlutterSecureStorage();
+                      await secureStorage.delete(key: 'password');
+                      setState(() {
+                        detailedView = false;
+                        isReorderable = false;
+                        tokens = null;
+                        email = null;
+                      });
+                    },
+                    child: const Text(
+                      'Delete user data',
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                 ],
               ),
             ),
