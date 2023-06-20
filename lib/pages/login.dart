@@ -23,7 +23,7 @@ class LoginState extends State<Login> {
       hasAuthenticationCookies = false,
       passVis = true,
       displayLoginError = false,
-      useBioAuth = false;
+      useBioOrLocalAuth = false;
   List<String> tokens = [];
   String? email, password;
   LocalAuthentication? auth;
@@ -47,11 +47,11 @@ class LoginState extends State<Login> {
         await auth!.isDeviceSupported().then(
           (bioAuthSupport) {
             if (bioAuthSupport) {
-              useBioAuth = prefs.getBool('useBioAuth') ?? true;
+              useBioOrLocalAuth = prefs.getBool('useBioOrLocalAuth') ?? true;
             }
           },
         );
-        if (useBioAuth) {
+        if (useBioOrLocalAuth) {
           bool authenticated = await auth!.authenticate(
               localizedReason: 'Login as $email',
               options: const AuthenticationOptions());

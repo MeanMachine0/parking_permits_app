@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../functions.dart';
 
 class Settings extends StatefulWidget {
   const Settings({Key? key}) : super(key: key);
@@ -14,13 +17,18 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  late bool isLoading, bioAuthSupport, useBioAuth, detailedView, isReorderable;
+  late bool isLoading,
+      bioAuthSupport,
+      useBioOrLocalAuth,
+      detailedView,
+      isReorderable;
   List<String>? tokens;
   String? email;
   late String dateFormat;
   GoogleSignIn googleSignIn = GoogleSignIn();
   FirebaseAuth auth = FirebaseAuth.instance;
   User? user;
+  DocumentReference? docRef;
 
   @override
   void initState() {
@@ -34,19 +42,37 @@ class SettingsState extends State<Settings> {
         isLoading = true;
       });
     }
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     bioAuthSupport = await LocalAuthentication().isDeviceSupported();
-    useBioAuth = prefs.getBool('useBioAuth') ?? bioAuthSupport;
-    detailedView = prefs.getBool('detailedView') ?? false;
-    isReorderable = prefs.getBool('isReorderable') ?? false;
-    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
-    tokens = prefs.getStringList('tokens');
-    if (tokens != null) {
-      email = prefs.getString('email');
-    }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     AuthCredential? authCredential = await loginGoogle();
     if (authCredential != null) {
       user = await loginFirebase(authCredential);
+      if (user != null) {
+        docRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
+        if (docRef != null) {
+          DocumentSnapshot doc = await docRef!.get();
+          if (doc.exists) {
+            Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+            if (docData.containsKey('preferences')) {
+              useBioOrLocalAuth =
+                  docData['preferences']['useBioOrLocalAuth'] ?? bioAuthSupport;
+              detailedView = docData['preferences']['detailedView'] ?? false;
+              isReorderable = docData['preferences']['isReorderable'] ?? false;
+              dateFormat = docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
+            } else {
+              useBioOrLocalAuth =
+                  prefs.getBool('useBioOrLocalAuth') ?? bioAuthSupport;
+              detailedView = prefs.getBool('detailedView') ?? false;
+              isReorderable = prefs.getBool('isReorderable') ?? false;
+              dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
+            }
+          }
+        }
+      }
+    }
+    tokens = prefs.getStringList('tokens');
+    if (tokens != null) {
+      email = prefs.getString('email');
     }
     if (mounted) {
       setState(() {
@@ -94,13 +120,18 @@ class SettingsState extends State<Settings> {
                   if (bioAuthSupport)
                     CheckboxListTile(
                       title: const Text('Local/Biometric Authentication'),
-                      value: useBioAuth,
+                      value: useBioOrLocalAuth,
                       onChanged: (newValue) async {
+                        await Functions.setOrUpdateFirestore(
+                            docRef,
+                            'preferences',
+                            'preferences.useBioOrLocalAuth',
+                            newValue!);
                         SharedPreferences prefs =
                             await SharedPreferences.getInstance();
-                        prefs.setBool('useBioAuth', newValue!);
+                        prefs.setBool('useBioOrLocalAuth', newValue);
                         setState(() {
-                          useBioAuth = newValue;
+                          useBioOrLocalAuth = newValue;
                         });
                       },
                     ),
@@ -108,9 +139,11 @@ class SettingsState extends State<Settings> {
                     title: const Text('Detailed View'),
                     value: detailedView,
                     onChanged: (newValue) async {
+                      await Functions.setOrUpdateFirestore(docRef,
+                          'preferences', 'preferences.detailedView', newValue!);
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-                      prefs.setBool('detailedView', newValue!);
+                      prefs.setBool('detailedView', newValue);
                       setState(() {
                         detailedView = newValue;
                       });
@@ -120,9 +153,14 @@ class SettingsState extends State<Settings> {
                     title: const Text('Reorderable Vehicles'),
                     value: isReorderable,
                     onChanged: (newValue) async {
+                      await Functions.setOrUpdateFirestore(
+                          docRef,
+                          'preferences',
+                          'preferences.isReorderable',
+                          newValue!);
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-                      prefs.setBool('isReorderable', newValue!);
+                      prefs.setBool('isReorderable', newValue);
                       setState(() {
                         isReorderable = newValue;
                       });
@@ -143,9 +181,14 @@ class SettingsState extends State<Settings> {
                       }).toList(),
                       onChanged: (newDateFormat) async {
                         if (newDateFormat != dateFormat) {
+                          await Functions.setOrUpdateFirestore(
+                              docRef,
+                              'preferences',
+                              'preferences.dateFormat',
+                              newDateFormat!);
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
-                          await prefs.setString('dateFormat', newDateFormat!);
+                          await prefs.setString('dateFormat', newDateFormat);
                           setState(() {
                             dateFormat = newDateFormat;
                           });
@@ -157,6 +200,10 @@ class SettingsState extends State<Settings> {
                     padding: const EdgeInsets.only(top: 10),
                     child: ElevatedButton(
                       onPressed: () async {
+                        if (docRef != null) {
+                          await docRef!.delete();
+                          user = null;
+                        }
                         SharedPreferences prefs =
                             await SharedPreferences.getInstance();
                         await prefs.clear();

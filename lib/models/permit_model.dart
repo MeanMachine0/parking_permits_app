@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 PermitModel permitModelFromJson(String str) =>
@@ -1767,9 +1768,19 @@ class Vehicle {
     });
   }
 
-  static void sortByCustom(List<Vehicle> vehicles, String permitId) async {
+  static Future<void> sortByCustom(
+      List<Vehicle> vehicles, String permitId, DocumentSnapshot? doc) async {
+    late List orderedVehicleIds;
+    Map<String, dynamic>? docData;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> orderedVehicleIds = prefs.getStringList(permitId)!;
+    if (doc != null && doc.exists) {
+      docData = doc.data() as Map<String, dynamic>;
+      orderedVehicleIds = docData.containsKey(permitId)
+          ? doc[permitId]
+          : prefs.getStringList(permitId);
+    } else {
+      orderedVehicleIds = prefs.getStringList(permitId)!;
+    }
     Map<int, int> orderedVehicleIdsToIndices = {};
     for (int i = 0; i < orderedVehicleIds.length; i++) {
       orderedVehicleIdsToIndices[int.parse(orderedVehicleIds[i])] = i;

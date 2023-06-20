@@ -1,10 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:parking_permits_app/models/mini_permit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
 import '../constants.dart';
+import '../functions.dart';
 import '../models/permit_model.dart';
 import '../widgets/mini_permit_card.dart';
 import '../widgets/vehicle_card.dart';
@@ -30,6 +34,10 @@ class HomeState extends State<Home> {
   int selectedIndex = -1;
   String? email, message;
   late String dateFormat;
+  GoogleSignIn googleSignIn = GoogleSignIn();
+  FirebaseAuth auth = FirebaseAuth.instance;
+  User? user;
+  DocumentReference? docRef;
 
   @override
   void initState() {
@@ -43,10 +51,32 @@ class HomeState extends State<Home> {
         isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      AuthCredential? authCredential = await loginGoogle();
+      if (authCredential != null) {
+        user = await loginFirebase(authCredential);
+        if (user != null) {
+          docRef =
+              FirebaseFirestore.instance.collection('users').doc(user!.uid);
+          if (docRef != null) {
+            DocumentSnapshot doc = await docRef!.get();
+            if (doc.exists) {
+              Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+              if (docData.containsKey('preferences')) {
+                detailedView = docData['preferences']['detailedView'] ?? false;
+                isReorderable =
+                    docData['preferences']['isReorderable'] ?? false;
+                dateFormat =
+                    docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
+              } else {
+                detailedView = prefs.getBool('detailedView') ?? false;
+                isReorderable = prefs.getBool('isReorderable') ?? false;
+                dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
+              }
+            }
+          }
+        }
+      }
       email = prefs.getString('email');
-      detailedView = prefs.getBool('detailedView') ?? false;
-      isReorderable = prefs.getBool('isReorderable') ?? false;
-      dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry =
@@ -60,6 +90,7 @@ class HomeState extends State<Home> {
                   tokens[3],
                   !detailedView,
                   isReorderable,
+                  docRef,
                 );
       if (permitData.isEmpty && tokens.isNotEmpty) {
         logout();
@@ -97,6 +128,8 @@ class HomeState extends State<Home> {
   }
 
   void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
+    await Functions.setOrUpdateFirestore(
+        docRef, 'vehicles', 'vehicles.${vehicle.id}.note', newNote);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('${vehicle.id}Note', newNote);
     setState(() {
@@ -154,8 +187,9 @@ class HomeState extends State<Home> {
   void toggleVehicleIsFavouriteCallback(
       Vehicle vehicle, bool isExpanded) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool wasFavourite = vehicle.isFavourite;
-    bool isFavourite = !wasFavourite;
+    bool isFavourite = !vehicle.isFavourite;
+    await Functions.setOrUpdateFirestore(
+        docRef, 'vehicles', 'vehicles.${vehicle.id}.isFavourite', isFavourite);
     await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
     if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
@@ -186,6 +220,25 @@ class HomeState extends State<Home> {
         }
       },
     );
+  }
+
+  Future<AuthCredential?> loginGoogle() async {
+    GoogleSignInAccount? googleAccount;
+    googleAccount = await googleSignIn.signInSilently();
+    if (googleAccount == null) return null;
+    final GoogleSignInAuthentication googleAuth =
+        await googleAccount.authentication;
+    final AuthCredential authCredential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return authCredential;
+  }
+
+  Future<User?> loginFirebase(AuthCredential authCredential) async {
+    final User? user = auth.currentUser ??
+        (await auth.signInWithCredential(authCredential)).user;
+    return user;
   }
 
   @override
@@ -344,7 +397,8 @@ class HomeState extends State<Home> {
                                                             tokens[2],
                                                             tokens[3],
                                                             orderedVehicleIds
-                                                                .isNotEmpty) ??
+                                                                .isNotEmpty,
+                                                            docRef) ??
                                                     permit;
                                                 if (numVehiclesBefore ==
                                                     permit!.vehicles.length) {
@@ -416,6 +470,12 @@ class HomeState extends State<Home> {
                                                   .map((vehicle) =>
                                                       vehicle.id.toString())
                                                   .toList();
+                                              await Functions
+                                                  .setOrUpdateFirestore(
+                                                      docRef,
+                                                      permit!.id.toString(),
+                                                      permit!.id.toString(),
+                                                      orderedVehicleIds);
                                               await prefs.setStringList(
                                                   permit!.id.toString(),
                                                   orderedVehicleIds);
@@ -435,15 +495,26 @@ class HomeState extends State<Home> {
                                               child: Center(
                                                 child: ElevatedButton(
                                                   onPressed: () async {
+                                                    Vehicle.sortByIsFavourite(
+                                                        permit!.vehicles);
+                                                    await Functions
+                                                        .setOrUpdateFirestore(
+                                                            docRef,
+                                                            permit!.id
+                                                                .toString(),
+                                                            permit!.id
+                                                                .toString(),
+                                                            permit!.vehicles
+                                                                .map((vehicle) =>
+                                                                    vehicle.id
+                                                                        .toString())
+                                                                .toList());
                                                     SharedPreferences prefs =
                                                         await SharedPreferences
                                                             .getInstance();
                                                     prefs.remove(
                                                         'orderedVehicleIds');
-                                                    setState(() {
-                                                      Vehicle.sortByIsFavourite(
-                                                          permit!.vehicles);
-                                                    });
+                                                    setState(() {});
                                                   },
                                                   child: const Text(
                                                       'Reset custom ordering'),
@@ -512,12 +583,14 @@ class HomeState extends State<Home> {
                                                             .toString()) ??
                                                     [];
                                             permit = await Api().getPermit(
-                                              miniPermits[index].id.toString(),
-                                              tokens[1],
-                                              tokens[2],
-                                              tokens[3],
-                                              orderedVehicleIds.isNotEmpty,
-                                            );
+                                                miniPermits[index]
+                                                    .id
+                                                    .toString(),
+                                                tokens[1],
+                                                tokens[2],
+                                                tokens[3],
+                                                orderedVehicleIds.isNotEmpty,
+                                                docRef);
                                             if (permit == null ||
                                                 permit!.vehicles.isNotEmpty) {
                                               try {

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart';
 import 'package:dio/dio.dart';
@@ -98,8 +99,13 @@ class Api {
     }
   }
 
-  Future<List> getMiniPermits(String fedAuthArpToken, String xsrfToken,
-      String iXsrfToken, bool firstOnly, bool customSort) async {
+  Future<List> getMiniPermits(
+      String fedAuthArpToken,
+      String xsrfToken,
+      String iXsrfToken,
+      bool firstOnly,
+      bool customSort,
+      DocumentReference? docRef) async {
     Map<String, dynamic> body = {
       '\u0024type':
           'Permits.Account.Common.Request.GetPermitsRequest, Permits.Account.Common',
@@ -125,8 +131,8 @@ class Api {
         MiniPermitModel miniPermit =
             miniPermitModelFromJson(json.encode(itemData));
         String permitId = itemData['id'].toString();
-        PermitModel? permit = await getPermit(
-            permitId, fedAuthArpToken, xsrfToken, iXsrfToken, customSort);
+        PermitModel? permit = await getPermit(permitId, fedAuthArpToken,
+            xsrfToken, iXsrfToken, customSort, docRef);
         if (permit == null) {
           return [false];
         }
@@ -143,8 +149,15 @@ class Api {
     }
   }
 
-  Future<PermitModel?> getPermit(String permitId, String fedAuthArpToken,
-      String xsrfToken, String iXsrfToken, bool customSort) async {
+  Future<PermitModel?> getPermit(
+      String permitId,
+      String fedAuthArpToken,
+      String xsrfToken,
+      String iXsrfToken,
+      bool customSort,
+      DocumentReference? docRef) async {
+    DocumentSnapshot? doc;
+    Map<String, dynamic>? docData;
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
       'x-xsrf-token': xsrfToken.split('peterborough=')[1]
@@ -155,22 +168,35 @@ class Api {
       'id': permitId
     };
     try {
+      if (docRef != null) {
+        doc = await docRef.get();
+        if (doc.exists) {
+          docData = doc.data() as Map<String, dynamic>;
+        }
+      }
       var response = await Dio()
           .post(processorUrl, data: body, options: Options(headers: headers));
       PermitModel permit =
           permitModelFromJson(json.encode(response.data['permit']));
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool useFirestoreVehicles =
+          docRef != null && doc!.exists && docData!.containsKey('vehicles');
       for (Vehicle vehicle in permit.vehicles) {
-        vehicle.note = prefs.getString('${vehicle.id}Note');
-        vehicle.isFavourite =
-            prefs.getBool('${vehicle.id}IsFavourite') ?? false;
+        if (useFirestoreVehicles) {
+          vehicle.note = doc['vehicles']?[vehicle.id.toString()]?['note'];
+          vehicle.isFavourite =
+              doc['vehicles']?[vehicle.id.toString()]?['isFavourite'] ?? false;
+        } else {
+          vehicle.note = prefs.getString('${vehicle.id}Note');
+          vehicle.isFavourite =
+              prefs.getBool('${vehicle.id}IsFavourite') ?? false;
+        }
       }
       if (customSort) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
         bool previouslySorted =
             prefs.getStringList(permitId.toString()) != null;
         if (previouslySorted) {
-          Vehicle.sortByCustom(permit.vehicles, permitId);
+          await Vehicle.sortByCustom(permit.vehicles, permitId, doc);
         } else {
           Vehicle.sortByIsFavourite(permit.vehicles);
         }
@@ -267,12 +293,14 @@ class Api {
   }
 
   Future<PermitModel?> addVehicleToPermit(
-      String vrm,
-      PermitModel permit,
-      String fedAuthArpToken,
-      String xsrfToken,
-      String iXsrfToken,
-      bool customSort) async {
+    String vrm,
+    PermitModel permit,
+    String fedAuthArpToken,
+    String xsrfToken,
+    String iXsrfToken,
+    bool customSort,
+    DocumentReference? docRef,
+  ) async {
     Map<String, String> headers = {
       'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
       'x-xsrf-token': xsrfToken.split('peterborough=')[1]
@@ -315,7 +343,7 @@ class Api {
         }
       }
       PermitModel? updatedPermit = await getPermit(permit.id.toString(),
-          fedAuthArpToken, xsrfToken, iXsrfToken, customSort);
+          fedAuthArpToken, xsrfToken, iXsrfToken, customSort, docRef);
       return updatedPermit;
     } catch (e) {
       return null;
