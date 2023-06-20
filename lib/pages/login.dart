@@ -6,6 +6,7 @@ import 'package:parking_permits_app/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
+import '../variables.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -18,9 +19,7 @@ class LoginState extends State<Login> {
   final loginFormKey = GlobalKey<FormState>();
   TextEditingController emailController = TextEditingController(),
       passwordController = TextEditingController();
-  bool isLoading = false,
-      isLoading1 = false,
-      hasAuthenticationCookies = false,
+  bool hasAuthenticationCookies = false,
       passVis = true,
       displayLoginError = false,
       useBioOrLocalAuth = false;
@@ -37,7 +36,7 @@ class LoginState extends State<Login> {
   void getData() async {
     if (mounted) {
       setState(() {
-        isLoading = true;
+        Variables.isLoading = true;
       });
       SharedPreferences prefs = await SharedPreferences.getInstance();
       tokens = prefs.getStringList('tokens') ?? [];
@@ -65,7 +64,7 @@ class LoginState extends State<Login> {
       if (mounted) {
         setState(() {
           emailController.text = email ?? '';
-          isLoading = false;
+          Variables.isLoading = false;
         });
       }
     }
@@ -74,7 +73,7 @@ class LoginState extends State<Login> {
   void login(String email, String password) async {
     if (mounted) {
       setState(() {
-        isLoading1 = true;
+        Variables.isLoading1 = true;
       });
       tokens = await Api().login(email, password);
       if (tokens.isNotEmpty) {
@@ -91,7 +90,7 @@ class LoginState extends State<Login> {
     }
     if (mounted) {
       setState(() {
-        isLoading1 = false;
+        Variables.isLoading1 = false;
       });
     }
   }
@@ -100,7 +99,7 @@ class LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: const Text('Login')),
-        body: isLoading || isLoading1
+        body: Variables.isLoading || Variables.isLoading1
             ? const Center(
                 child: CircularProgressIndicator(),
               )

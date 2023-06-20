@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parking_permits_app/variables.dart';
 
 import '../constants.dart';
 import 'home.dart';
@@ -27,7 +28,10 @@ class BaseState extends State<Base> {
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
-            _selectedIndex = index;
+            if ((!Variables.isLoading && !Variables.isLoading1) |
+                Variables.notSilentlySigningIn) {
+              _selectedIndex = index;
+            }
           });
         },
         destinations: const [

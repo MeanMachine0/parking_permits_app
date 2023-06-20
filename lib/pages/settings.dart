@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:parking_permits_app/variables.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../functions.dart';
@@ -17,11 +18,7 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  late bool isLoading,
-      bioAuthSupport,
-      useBioOrLocalAuth,
-      detailedView,
-      isReorderable;
+  late bool bioAuthSupport, useBioOrLocalAuth, detailedView, isReorderable;
   List<String>? tokens;
   String? email;
   late String dateFormat;
@@ -39,7 +36,7 @@ class SettingsState extends State<Settings> {
   void getData() async {
     if (mounted) {
       setState(() {
-        isLoading = true;
+        Variables.isLoading = true;
       });
     }
     bioAuthSupport = await LocalAuthentication().isDeviceSupported();
@@ -80,7 +77,7 @@ class SettingsState extends State<Settings> {
     }
     if (mounted) {
       setState(() {
-        isLoading = false;
+        Variables.isLoading = false;
       });
     }
   }
@@ -120,7 +117,7 @@ class SettingsState extends State<Settings> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: isLoading
+      body: Variables.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Animate(
               effects: const [

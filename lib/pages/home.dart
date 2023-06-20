@@ -10,6 +10,7 @@ import '../api.dart';
 import '../constants.dart';
 import '../functions.dart';
 import '../models/permit_model.dart';
+import '../variables.dart';
 import '../widgets/mini_permit_card.dart';
 import '../widgets/vehicle_card.dart';
 import 'login.dart';
@@ -22,7 +23,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  bool isLoading = false, isLoading1 = false, failure = false, firstPass = true;
+  bool failure = false, firstPass = true;
   late bool detailedView, isReorderable;
   bool? addVehicleFailure;
   List<String> tokens = [], orderedVehicleIds = [];
@@ -48,8 +49,9 @@ class HomeState extends State<Home> {
   void getData() async {
     if (mounted) {
       setState(() {
-        isLoading = true;
+        Variables.isLoading = true;
       });
+      Variables.notSilentlySigningIn = false;
       SharedPreferences prefs = await SharedPreferences.getInstance();
       AuthCredential? authCredential = await loginGoogle();
       if (authCredential != null) {
@@ -82,6 +84,7 @@ class HomeState extends State<Home> {
       } else {
         getPrefs(prefs);
       }
+      Variables.notSilentlySigningIn = true;
       email = prefs.getString('email');
       tokens = prefs.getStringList('tokens') ?? [];
       Duration buffer = const Duration(minutes: 30, seconds: 10);
@@ -112,8 +115,9 @@ class HomeState extends State<Home> {
       }
       if (mounted) {
         setState(() {
-          isLoading = false;
-          isLoading1 = false;
+          Variables.isLoading = false;
+          Variables.isLoading1 = false;
+          Variables.notSilentlySigningIn = false;
         });
       }
     }
@@ -151,7 +155,7 @@ class HomeState extends State<Home> {
 
   void assignPermitCallback(Vehicle newActiveVehicle) async {
     setState(() {
-      isLoading = true;
+      Variables.isLoading = true;
     });
     activeVehicle?.isActive = false;
     bool success = await Api().assignPermit(
@@ -167,13 +171,13 @@ class HomeState extends State<Home> {
     }
     setState(() {
       activeVehicle!.isActive = true;
-      isLoading = false;
+      Variables.isLoading = false;
     });
   }
 
   void editVehicleVrmCallback(Vehicle oldVehicle, String newVehicleVrm) async {
     setState(() {
-      isLoading = true;
+      Variables.isLoading = true;
     });
     bool success = await Api().editVehicleVrm(
       permit!.id.toString(),
@@ -192,7 +196,7 @@ class HomeState extends State<Home> {
       oldVehicle.message = 'Failed to edit vrm!';
     }
     setState(() {
-      isLoading = false;
+      Variables.isLoading = false;
     });
   }
 
@@ -298,7 +302,7 @@ class HomeState extends State<Home> {
               child: ElevatedButton(
                 onPressed: () async {
                   setState(() {
-                    isLoading = true;
+                    Variables.isLoading = true;
                   });
                   if (tokens.isEmpty) {
                     bool success = await Navigator.of(context).push(
@@ -306,18 +310,18 @@ class HomeState extends State<Home> {
                         false;
                     if (success && mounted) {
                       setState(() {
-                        isLoading1 = true;
+                        Variables.isLoading1 = true;
                       });
                       getData();
                     } else {
                       setState(() {
-                        isLoading = false;
+                        Variables.isLoading = false;
                       });
                     }
                   } else {
                     logout();
                     if (mounted) {
-                      isLoading = false;
+                      Variables.isLoading = false;
                       setState(() {});
                     }
                   }
@@ -327,7 +331,7 @@ class HomeState extends State<Home> {
             ),
           ],
         ),
-        body: isLoading || isLoading1
+        body: Variables.isLoading || Variables.isLoading1
             ? const Center(child: CircularProgressIndicator())
             : permitData.isEmpty && permit == null
                 ? Animate(
@@ -394,7 +398,7 @@ class HomeState extends State<Home> {
                                               )),
                                               onSubmitted: (vrm) async {
                                                 setState(() {
-                                                  isLoading = true;
+                                                  Variables.isLoading = true;
                                                 });
                                                 int numVehiclesBefore =
                                                     permit!.vehicles.length;
@@ -420,7 +424,7 @@ class HomeState extends State<Home> {
                                                 }
                                                 if (mounted) {
                                                   setState(() {
-                                                    isLoading = false;
+                                                    Variables.isLoading = false;
                                                   });
                                                 }
                                               },
@@ -583,7 +587,7 @@ class HomeState extends State<Home> {
                                           ),
                                           onTap: () async {
                                             setState(() {
-                                              isLoading = true;
+                                              Variables.isLoading = true;
                                             });
                                             SharedPreferences prefs =
                                                 await SharedPreferences
@@ -619,7 +623,7 @@ class HomeState extends State<Home> {
                                             if (mounted) {
                                               setState(() {
                                                 firstPass = false;
-                                                isLoading = false;
+                                                Variables.isLoading = false;
                                               });
                                             }
                                           },
