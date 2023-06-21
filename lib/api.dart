@@ -5,15 +5,17 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'instances.dart';
 import 'models/mini_permit_model.dart';
 import 'models/permit_model.dart';
+import 'variables.dart';
 
 class Api {
   static String baseUrl = 'https://permits.paysmarti.co.uk/';
   static String accountUrl = '${baseUrl}acct/peterborough/';
   static String processorUrl = '${accountUrl}api/RequestProcessor/';
 
-  Future<List<String>> login(String email, String password) async {
+  Future<void> login(String email, String password) async {
     try {
       var response = await Dio().get(accountUrl);
       String referral = response.realUri.toString();
@@ -87,7 +89,7 @@ class Api {
       List<String> cookies = response.headers['set-cookie']!;
       String xsrfToken = cookies[0].split(';')[0];
       String iXsrfToken = cookies[1].split(';')[0];
-      return [
+      Variables.tokens = [
         fedAuthToken,
         fedAuthArpToken,
         xsrfToken,
@@ -95,17 +97,11 @@ class Api {
         expiry,
       ];
     } catch (e) {
-      return [];
+      return;
     }
   }
 
-  Future<List> getMiniPermits(
-      String fedAuthArpToken,
-      String xsrfToken,
-      String iXsrfToken,
-      bool firstOnly,
-      bool customSort,
-      DocumentReference? docRef) async {
+  Future<List> getMiniPermits(bool firstOnly, bool customSort) async {
     Map<String, dynamic> body = {
       '\u0024type':
           'Permits.Account.Common.Request.GetPermitsRequest, Permits.Account.Common',
@@ -117,8 +113,9 @@ class Api {
       }
     };
     Map<String, String> headers = {
-      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
-      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+      'cookie':
+          '${Variables.tokens[1]}; ${Variables.tokens[2]}; ${Variables.tokens[3]}',
+      'x-xsrf-token': Variables.tokens[2].split('peterborough=')[1]
     };
     try {
       var response = await Dio().post('${accountUrl}api/RequestProcessor/',
@@ -131,8 +128,7 @@ class Api {
         MiniPermitModel miniPermit =
             miniPermitModelFromJson(json.encode(itemData));
         String permitId = itemData['id'].toString();
-        PermitModel? permit = await getPermit(permitId, fedAuthArpToken,
-            xsrfToken, iXsrfToken, customSort, docRef);
+        PermitModel? permit = await getPermit(permitId, customSort);
         if (permit == null) {
           return [false];
         }
@@ -149,18 +145,13 @@ class Api {
     }
   }
 
-  Future<PermitModel?> getPermit(
-      String permitId,
-      String fedAuthArpToken,
-      String xsrfToken,
-      String iXsrfToken,
-      bool customSort,
-      DocumentReference? docRef) async {
+  Future<PermitModel?> getPermit(String permitId, bool customSort) async {
     DocumentSnapshot? doc;
     Map<String, dynamic>? docData;
     Map<String, String> headers = {
-      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
-      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+      'cookie':
+          '${Variables.tokens[1]}; ${Variables.tokens[2]}; ${Variables.tokens[3]}',
+      'x-xsrf-token': Variables.tokens[2].split('peterborough=')[1]
     };
     Map<String, String> body = {
       '\u0024type':
@@ -168,8 +159,8 @@ class Api {
       'id': permitId
     };
     try {
-      if (docRef != null) {
-        doc = await docRef.get();
+      if (Instances.docRef != null) {
+        doc = await Instances.docRef!.get();
         if (doc.exists) {
           docData = doc.data() as Map<String, dynamic>;
         }
@@ -179,8 +170,9 @@ class Api {
       PermitModel permit =
           permitModelFromJson(json.encode(response.data['permit']));
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool useFirestoreVehicles =
-          docRef != null && doc!.exists && docData!.containsKey('vehicles');
+      bool useFirestoreVehicles = Instances.docRef != null &&
+          doc!.exists &&
+          docData!.containsKey('vehicles');
       for (Vehicle vehicle in permit.vehicles) {
         if (useFirestoreVehicles) {
           vehicle.note = doc['vehicles']?[vehicle.id.toString()]?['note'];
@@ -209,11 +201,11 @@ class Api {
     }
   }
 
-  Future<bool> assignPermit(String permitId, String newVehicleId,
-      String fedAuthArpToken, String xsrfToken, String iXsrfToken) async {
+  Future<bool> assignPermit(String permitId, String newVehicleId) async {
     Map<String, String> headers = {
-      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
-      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+      'cookie':
+          '${Variables.tokens[1]}; ${Variables.tokens[2]}; ${Variables.tokens[3]}',
+      'x-xsrf-token': Variables.tokens[2].split('peterborough=')[1]
     };
     Map<String, String> body = {
       "\u0024type":
@@ -239,15 +231,11 @@ class Api {
   }
 
   Future<bool> editVehicleVrm(
-      String permitId,
-      String oldVehicleId,
-      String newVehicleVrm,
-      String fedAuthArpToken,
-      String xsrfToken,
-      String iXsrfToken) async {
+      String permitId, String oldVehicleId, String newVehicleVrm) async {
     Map<String, String> headers = {
-      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
-      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+      'cookie':
+          '${Variables.tokens[1]}; ${Variables.tokens[2]}; ${Variables.tokens[3]}',
+      'x-xsrf-token': Variables.tokens[2].split('peterborough=')[1]
     };
     List<Map<String, dynamic>> bodies = [
       {
@@ -293,17 +281,11 @@ class Api {
   }
 
   Future<PermitModel?> addVehicleToPermit(
-    String vrm,
-    PermitModel permit,
-    String fedAuthArpToken,
-    String xsrfToken,
-    String iXsrfToken,
-    bool customSort,
-    DocumentReference? docRef,
-  ) async {
+      String vrm, PermitModel permit, bool customSort) async {
     Map<String, String> headers = {
-      'cookie': '$fedAuthArpToken; $xsrfToken; $iXsrfToken',
-      'x-xsrf-token': xsrfToken.split('peterborough=')[1]
+      'cookie':
+          '${Variables.tokens[1]}; ${Variables.tokens[2]}; ${Variables.tokens[3]}',
+      'x-xsrf-token': Variables.tokens[2].split('peterborough=')[1]
     };
     List<Map<String, dynamic>> bodies = [
       {
@@ -342,8 +324,8 @@ class Api {
           return null;
         }
       }
-      PermitModel? updatedPermit = await getPermit(permit.id.toString(),
-          fedAuthArpToken, xsrfToken, iXsrfToken, customSort, docRef);
+      PermitModel? updatedPermit =
+          await getPermit(permit.id.toString(), customSort);
       return updatedPermit;
     } catch (e) {
       return null;
