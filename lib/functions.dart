@@ -73,7 +73,7 @@ class Functions {
     }
   }
 
-  static Future<bool> syncFirestore() async {
+  static Future<bool> syncFirestore(bool overwriteFirestore) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     late List permitData;
     List<MiniPermitModel> miniPermits = [];
@@ -83,7 +83,7 @@ class Functions {
     List<String> vehicleIds = [];
     try {
       doc = await Instances.docRef!.get();
-      if (!doc.exists) {
+      if (overwriteFirestore) {
         Duration buffer = const Duration(minutes: 30, seconds: 10);
         DateTime expiry = Variables.tokens.isNotEmpty
             ? DateTime.parse(Variables.tokens.last)
