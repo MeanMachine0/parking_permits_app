@@ -73,16 +73,17 @@ class Functions {
     }
   }
 
-  static Future<bool> syncFirestore(bool overwrite) async {
+  static Future<bool> syncFirestore() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     late List permitData;
     List<MiniPermitModel> miniPermits = [];
     List<Vehicle> vehicles = [];
     List<Map<String, List<String>>> orderedVehicleIds = [];
-    DocumentSnapshot? doc;
+    late DocumentSnapshot doc;
     List<String> vehicleIds = [];
     try {
-      if (overwrite) {
+      doc = await Instances.docRef!.get();
+      if (!doc.exists) {
         Duration buffer = const Duration(minutes: 30, seconds: 10);
         DateTime expiry = Variables.tokens.isNotEmpty
             ? DateTime.parse(Variables.tokens.last)
@@ -149,45 +150,41 @@ class Functions {
           }
         }
       } else {
-        doc = await Instances.docRef!.get();
-        if (doc.exists) {
-          Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-          if (docData.containsKey('preferences')) {
-            await prefs.setBool(
-                'useBioOrLocalAuth',
-                docData['preferences']['useBioOrLocalAuth'] ??
-                    Variables.bioOrLocalAuthIsSupported);
-            await prefs.setBool('useDetailedView',
-                docData['preferences']['useDetailedView'] ?? false);
-            await prefs.setBool('isReorderable',
-                docData['preferences']['isReorderable'] ?? false);
-            await prefs.setString('dateFormat',
-                docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy');
+        Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+        if (docData.containsKey('preferences')) {
+          await prefs.setBool(
+              'useBioOrLocalAuth',
+              docData['preferences']['useBioOrLocalAuth'] ??
+                  Variables.bioOrLocalAuthIsSupported);
+          await prefs.setBool('useDetailedView',
+              docData['preferences']['useDetailedView'] ?? false);
+          await prefs.setBool('isReorderable',
+              docData['preferences']['isReorderable'] ?? false);
+          await prefs.setString('dateFormat',
+              docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy');
+        }
+        if (docData.containsKey('permitIdToOrderedVehicleIds')) {
+          Map<String, dynamic> idMap =
+              docData['permitIdToOrderedVehicleIds'] as Map<String, dynamic>;
+          List<String> permitIds = idMap.keys.toList();
+          for (String permitId in permitIds) {
+            vehicleIds = (idMap[permitId] as List)
+                .map((vehicleId) => vehicleId.toString())
+                .toList();
+            await prefs.setStringList(permitId, vehicleIds);
           }
-          if (docData.containsKey('permitIdToOrderedVehicleIds')) {
-            Map<String, dynamic> idMap =
-                docData['permitIdToOrderedVehicleIds'] as Map<String, dynamic>;
-            List<String> permitIds = idMap.keys.toList();
-            for (String permitId in permitIds) {
-              vehicleIds = (idMap[permitId] as List)
-                  .map((vehicleId) => vehicleId.toString())
-                  .toList();
-              await prefs.setStringList(permitId, vehicleIds);
+        }
+        if (docData.containsKey('vehicles')) {
+          Map<String, dynamic> vehicleMap = docData['vehicles'];
+          vehicleIds = vehicleMap.keys.toList();
+          for (String vehicleId in vehicleIds) {
+            String? note = vehicleMap[vehicleId]['note']?.toString();
+            if (note != null) {
+              await prefs.setString('${vehicleId}Note', note);
             }
-          }
-          if (docData.containsKey('vehicles')) {
-            Map<String, dynamic> vehicleMap = docData['vehicles'];
-            vehicleIds = vehicleMap.keys.toList();
-            for (String vehicleId in vehicleIds) {
-              String? note = vehicleMap[vehicleId]['note']?.toString();
-              if (note != null) {
-                await prefs.setString('${vehicleId}Note', note);
-              }
-              bool? isFavourite =
-                  vehicleMap[vehicleId]?['isFavourite'] as bool?;
-              if (isFavourite != null && isFavourite) {
-                await prefs.setBool('${vehicleId}IsFavourite', true);
-              }
+            bool? isFavourite = vehicleMap[vehicleId]?['isFavourite'] as bool?;
+            if (isFavourite != null && isFavourite) {
+              await prefs.setBool('${vehicleId}IsFavourite', true);
             }
           }
         }
