@@ -166,9 +166,8 @@ class SettingsState extends State<Settings> {
                             Instances.docRef = FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(Instances.user!.uid);
-                            DocumentSnapshot doc =
-                                await Instances.docRef!.get();
-                            await Functions.syncFirestore(!doc.exists);
+                            await Functions.syncFirestore();
+                            await Functions.updateStatics();
                             // ignore: empty_catches
                           } catch (e) {}
                           if (mounted) {
