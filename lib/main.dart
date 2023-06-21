@@ -5,7 +5,10 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'constants.dart';
+import 'functions.dart';
+import 'instances.dart';
 import 'pages/base.dart';
+import 'variables.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +21,9 @@ Future<void> main() async {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+  await Instances.initialise();
+  await Variables.initialise();
+  await Functions.silentSignIn();
   runApp(const ParkingPermitsApp());
 }
 
