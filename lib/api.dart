@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'instances.dart';
@@ -169,8 +168,8 @@ class Api {
           .post(processorUrl, data: body, options: Options(headers: headers));
       PermitModel permit =
           permitModelFromJson(json.encode(response.data['permit']));
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool useFirestoreVehicles = Instances.docRef != null &&
+      bool useFirestoreVehicles = !Variables.isSyncing &&
+          Instances.docRef != null &&
           doc!.exists &&
           docData!.containsKey('vehicles');
       for (Vehicle vehicle in permit.vehicles) {
@@ -179,12 +178,13 @@ class Api {
           vehicle.isFavourite =
               doc['vehicles']?[vehicle.id.toString()]?['isFavourite'] ?? false;
         } else {
-          vehicle.note = prefs.getString('${vehicle.id}Note');
+          vehicle.note = Instances.prefs.getString('${vehicle.id}Note');
           vehicle.isFavourite =
-              prefs.getBool('${vehicle.id}IsFavourite') ?? false;
+              Instances.prefs.getBool('${vehicle.id}IsFavourite') ?? false;
         }
       }
-      if (customSort && prefs.getStringList(permitId.toString()) != null) {
+      if (customSort &&
+          Instances.prefs.getStringList(permitId.toString()) != null) {
         await Vehicle.sortByCustom(permit.vehicles, permitId, doc);
       } else {
         Vehicle.sortByIsFavourite(permit.vehicles);
