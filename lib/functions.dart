@@ -24,33 +24,36 @@ class Functions {
       );
       Instances.user =
           (await Instances.auth.signInWithCredential(authCredential)).user;
-      Instances.docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(Instances.user!.uid);
-      DocumentSnapshot doc = await Instances.docRef!.get();
-      if (doc.exists) {
-        Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-        if (docData.containsKey('preferences')) {
-          if (docData['preferences']['useBioOrLocalAuth'] != null) {
-            Variables.useBioOrLocalAuth = docData['preferences']
-                    ['useBioOrLocalAuth'] &&
-                Variables.bioOrLocalAuthIsSupported;
-          }
-          if (docData['preferences']['useDetailedView'] != null) {
-            Variables.useDetailedView = docData['preferences']['detailedView'];
-          }
-          if (docData['preferences']['isReorderable'] != null) {
-            Variables.isReorderable = docData['preferences']['isReorderable'];
-          }
-          if (docData['preferences']['dateFormat'] != null) {
-            Variables.dateFormat = docData['preferences']['dateFormat'];
-          }
-        }
-      }
+      await updateStatics();
       Variables.notSilentlySigningIn = true;
     } catch (e) {
       Variables.notSilentlySigningIn = true;
       return;
+    }
+  }
+
+  static Future<void> updateStatics() async {
+    Instances.docRef =
+        FirebaseFirestore.instance.collection('users').doc(Instances.user!.uid);
+    DocumentSnapshot doc = await Instances.docRef!.get();
+    if (doc.exists) {
+      Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
+      if (docData.containsKey('preferences')) {
+        if (docData['preferences']['useBioOrLocalAuth'] != null) {
+          Variables.useBioOrLocalAuth = docData['preferences']
+                  ['useBioOrLocalAuth'] &&
+              Variables.bioOrLocalAuthIsSupported;
+        }
+        if (docData['preferences']['useDetailedView'] != null) {
+          Variables.useDetailedView = docData['preferences']['useDetailedView'];
+        }
+        if (docData['preferences']['isReorderable'] != null) {
+          Variables.isReorderable = docData['preferences']['isReorderable'];
+        }
+        if (docData['preferences']['dateFormat'] != null) {
+          Variables.dateFormat = docData['preferences']['dateFormat'];
+        }
+      }
     }
   }
 
@@ -120,7 +123,8 @@ class Functions {
               Variables.bioOrLocalAuthIsSupported
         });
         Instances.docRef!.update({
-          'preferences.detailedView': prefs.getBool('detailedView') ?? false
+          'preferences.useDetailedView':
+              prefs.getBool('useDetailedView') ?? false
         });
         Instances.docRef!.update({
           'preferences.isReorderable': prefs.getBool('isReorderable') ?? false
@@ -153,8 +157,8 @@ class Functions {
                 'useBioOrLocalAuth',
                 docData['preferences']['useBioOrLocalAuth'] ??
                     Variables.bioOrLocalAuthIsSupported);
-            await prefs.setBool('detailedView',
-                docData['preferences']['detailedView'] ?? false);
+            await prefs.setBool('useDetailedView',
+                docData['preferences']['useDetailedView'] ?? false);
             await prefs.setBool('isReorderable',
                 docData['preferences']['isReorderable'] ?? false);
             await prefs.setString('dateFormat',

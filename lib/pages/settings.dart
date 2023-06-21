@@ -91,9 +91,9 @@ class SettingsState extends State<Settings> {
                     onChanged: (newValue) async {
                       if (Instances.user != null) {
                         await Functions.setOrUpdateFirestore('preferences',
-                            'preferences.detailedView', newValue!);
+                            'preferences.useDetailedView', newValue!);
                       }
-                      Instances.prefs.setBool('detailedView', newValue!);
+                      Instances.prefs.setBool('useDetailedView', newValue!);
                       setState(() {
                         Variables.useDetailedView = newValue;
                       });
