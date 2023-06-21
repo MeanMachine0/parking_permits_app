@@ -56,6 +56,36 @@ class SettingsState extends State<Settings> {
     return authCredential;
   }
 
+  Future<bool?> openDialog() => showDialog<bool>(
+      context: context,
+      builder: ((context) => AlertDialog(
+              title: const Text('User data conflict!'),
+              content: const Text(
+                  "Pressing 'DOWNLOAD' will overwrite your local data with the cloud data. Pressing 'UPLOAD' will overwrite the cloud data with your local data."),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(false);
+                        },
+                        child: const Text('DOWNLOAD'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                        },
+                        child: const Text('UPLOAD'),
+                      ),
+                    ),
+                  ],
+                )
+              ])));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,25 +185,36 @@ class SettingsState extends State<Settings> {
                       if (Instances.user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
+                        setState(() {
+                          Variables.isLoading = true;
+                        });
                         if (authCredential != null) {
                           try {
-                            setState(() {
-                              Variables.isLoading = true;
-                            });
                             Instances.user = (await Instances.auth
                                     .signInWithCredential(authCredential))
                                 .user;
                             Instances.docRef = FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(Instances.user!.uid);
-                            await Functions.syncFirestore();
-                            await Functions.updateStatics();
-                            // ignore: empty_catches
-                          } catch (e) {}
-                          if (mounted) {
-                            setState(() {
-                              Variables.isLoading = false;
-                            });
+                            bool? overwriteFirestore = await openDialog();
+                            if (overwriteFirestore != null) {
+                              Variables.isSyncing = true;
+                              bool success = await Functions.syncFirestore(
+                                  overwriteFirestore);
+                              Variables.isSyncing = false;
+                              if (success) await Functions.updateStatics();
+                            }
+                            if (mounted) {
+                              setState(() {
+                                Variables.isLoading = false;
+                              });
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() {
+                                Variables.isLoading = false;
+                              });
+                            }
                           }
                         }
                       } else {
@@ -182,7 +223,9 @@ class SettingsState extends State<Settings> {
                         Instances.user = null;
                         Instances.docRef = null;
                         if (mounted) {
-                          setState(() {});
+                          setState(() {
+                            Variables.isLoading = false;
+                          });
                         }
                       }
                     },
