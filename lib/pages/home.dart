@@ -1,14 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:parking_permits_app/models/mini_permit_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
 import '../constants.dart';
 import '../functions.dart';
+import '../instances.dart';
 import '../models/permit_model.dart';
 import '../variables.dart';
 import '../widgets/mini_permit_card.dart';
@@ -24,21 +21,15 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   bool failure = false, firstPass = true;
-  late bool detailedView, isReorderable;
   bool? addVehicleFailure;
-  List<String> tokens = [], orderedVehicleIds = [];
-  List permitData = [];
+  List<String> orderedVehicleIds = [];
+  late List permitData;
   PermitModel? permit;
   List<MiniPermitModel> miniPermits = [];
   late DateTime expiry;
   Vehicle? activeVehicle;
   int selectedIndex = -1;
-  String? email, message;
-  late String dateFormat;
-  GoogleSignIn googleSignIn = GoogleSignIn();
-  FirebaseAuth auth = FirebaseAuth.instance;
-  User? user;
-  DocumentReference? docRef;
+  String? message;
 
   @override
   void initState() {
@@ -51,62 +42,30 @@ class HomeState extends State<Home> {
       setState(() {
         Variables.isLoading = true;
       });
-      Variables.notSilentlySigningIn = false;
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      AuthCredential? authCredential = await loginGoogle();
-      if (authCredential != null) {
-        user = await loginFirebase(authCredential);
-        if (user != null) {
-          docRef =
-              FirebaseFirestore.instance.collection('users').doc(user!.uid);
-          if (docRef != null) {
-            DocumentSnapshot doc = await docRef!.get();
-            if (doc.exists) {
-              Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-              if (docData.containsKey('preferences')) {
-                detailedView = docData['preferences']['detailedView'] ?? false;
-                isReorderable =
-                    docData['preferences']['isReorderable'] ?? false;
-                dateFormat =
-                    docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
-              } else {
-                getPrefs(prefs);
-              }
-            } else {
-              getPrefs(prefs);
-            }
-          } else {
-            getPrefs(prefs);
+      await Instances.googleSignIn.isSignedIn().then(
+        (bool value) async {
+          if (!value) {
+            await Functions.silentSignIn();
           }
-        } else {
-          getPrefs(prefs);
-        }
-      } else {
-        getPrefs(prefs);
-      }
-      Variables.notSilentlySigningIn = true;
-      email = prefs.getString('email');
-      tokens = prefs.getStringList('tokens') ?? [];
+        },
+      );
       Duration buffer = const Duration(minutes: 30, seconds: 10);
-      DateTime expiry =
-          tokens.isNotEmpty ? DateTime.parse(tokens.last) : DateTime.now();
-      permitData =
-          tokens.isEmpty || DateTime.now().add(buffer).toUtc().isAfter(expiry)
-              ? []
-              : await Api().getMiniPermits(
-                  tokens[1],
-                  tokens[2],
-                  tokens[3],
-                  !detailedView,
-                  isReorderable,
-                  docRef,
-                );
-      if (permitData.isEmpty && tokens.isNotEmpty) {
+      DateTime expiry = Variables.tokens.isNotEmpty
+          ? DateTime.parse(Variables.tokens.last)
+          : DateTime.now();
+      permitData = Variables.tokens.isEmpty ||
+              DateTime.now().add(buffer).toUtc().isAfter(expiry)
+          ? []
+          : await Api().getMiniPermits(
+              !Variables.useDetailedView,
+              Variables.isReorderable,
+            );
+      if (permitData.isEmpty && Variables.tokens.isNotEmpty) {
         logout();
         message = "Your session has expired; please login again.";
       } else if (permitData.isNotEmpty && permitData[0] == false) {
         failure = true;
-      } else if (permitData.isNotEmpty && !detailedView) {
+      } else if (permitData.isNotEmpty && !Variables.useDetailedView) {
         permit = permitData[1];
         activeVehicle =
             permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
@@ -117,20 +76,13 @@ class HomeState extends State<Home> {
         setState(() {
           Variables.isLoading = false;
           Variables.isLoading1 = false;
-          Variables.notSilentlySigningIn = false;
         });
       }
     }
   }
 
-  void getPrefs(SharedPreferences prefs) {
-    detailedView = prefs.getBool('detailedView') ?? false;
-    isReorderable = prefs.getBool('isReorderable') ?? false;
-    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
-  }
-
   void logout() async {
-    tokens.clear();
+    Variables.tokens.clear();
     permitData.clear();
     permit = null;
     miniPermits.clear();
@@ -138,16 +90,14 @@ class HomeState extends State<Home> {
     failure = false;
     addVehicleFailure = null;
     message = null;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('tokens');
+    await Instances.prefs.remove('tokens');
     setState(() {});
   }
 
   void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
     await Functions.setOrUpdateFirestore(
-        docRef, 'vehicles', 'vehicles.${vehicle.id}.note', newNote);
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${vehicle.id}Note', newNote);
+        'vehicles', 'vehicles.${vehicle.id}.note', newNote);
+    await Instances.prefs.setString('${vehicle.id}Note', newNote);
     setState(() {
       vehicle.note = newNote;
     });
@@ -158,13 +108,8 @@ class HomeState extends State<Home> {
       Variables.isLoading = true;
     });
     activeVehicle?.isActive = false;
-    bool success = await Api().assignPermit(
-      permit!.id.toString(),
-      newActiveVehicle.id.toString(),
-      tokens[1],
-      tokens[2],
-      tokens[3],
-    );
+    bool success = await Api()
+        .assignPermit(permit!.id.toString(), newActiveVehicle.id.toString());
     if (success) {
       activeVehicle = newActiveVehicle;
       selectedIndex = -1;
@@ -180,16 +125,10 @@ class HomeState extends State<Home> {
       Variables.isLoading = true;
     });
     bool success = await Api().editVehicleVrm(
-      permit!.id.toString(),
-      oldVehicle.id.toString(),
-      newVehicleVrm,
-      tokens[1],
-      tokens[2],
-      tokens[3],
-    );
+        permit!.id.toString(), oldVehicle.id.toString(), newVehicleVrm);
     if (success) {
       oldVehicle.vrm = newVehicleVrm;
-      if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
+      if (!Variables.isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
       oldVehicle.message = 'Success!';
       selectedIndex = permit!.vehicles.indexOf(oldVehicle);
     } else {
@@ -202,13 +141,12 @@ class HomeState extends State<Home> {
 
   void toggleVehicleIsFavouriteCallback(
       Vehicle vehicle, bool isExpanded) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isFavourite = !vehicle.isFavourite;
     await Functions.setOrUpdateFirestore(
-        docRef, 'vehicles', 'vehicles.${vehicle.id}.isFavourite', isFavourite);
-    await prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
+        'vehicles', 'vehicles.${vehicle.id}.isFavourite', isFavourite);
+    await Instances.prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
-    if (!isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
+    if (!Variables.isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
     if (isExpanded) selectedIndex = permit!.vehicles.indexOf(vehicle);
     setState(() {});
   }
@@ -238,30 +176,11 @@ class HomeState extends State<Home> {
     );
   }
 
-  Future<AuthCredential?> loginGoogle() async {
-    GoogleSignInAccount? googleAccount;
-    googleAccount = await googleSignIn.signInSilently();
-    if (googleAccount == null) return null;
-    final GoogleSignInAuthentication googleAuth =
-        await googleAccount.authentication;
-    final AuthCredential authCredential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    return authCredential;
-  }
-
-  Future<User?> loginFirebase(AuthCredential authCredential) async {
-    final User? user = auth.currentUser ??
-        (await auth.signInWithCredential(authCredential)).user;
-    return user;
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        if (!firstPass && miniPermits.isEmpty && tokens.isNotEmpty) {
+        if (!firstPass && miniPermits.isEmpty && Variables.tokens.isNotEmpty) {
           selectedIndex = -1;
           permit = null;
           addVehicleFailure = null;
@@ -273,17 +192,18 @@ class HomeState extends State<Home> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: !firstPass && miniPermits.isEmpty && tokens.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    selectedIndex = -1;
-                    permit = null;
-                    addVehicleFailure = null;
-                    firstPass = true;
-                    getData();
-                  },
-                  icon: const Icon(Icons.arrow_back))
-              : null,
+          leading:
+              !firstPass && miniPermits.isEmpty && Variables.tokens.isNotEmpty
+                  ? IconButton(
+                      onPressed: () {
+                        selectedIndex = -1;
+                        permit = null;
+                        addVehicleFailure = null;
+                        firstPass = true;
+                        getData();
+                      },
+                      icon: const Icon(Icons.arrow_back))
+                  : null,
           title: miniPermits.isNotEmpty
               ? const Text('My Permits')
               : !firstPass
@@ -304,7 +224,7 @@ class HomeState extends State<Home> {
                   setState(() {
                     Variables.isLoading = true;
                   });
-                  if (tokens.isEmpty) {
+                  if (Variables.tokens.isEmpty) {
                     bool success = await Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const Login())) ??
                         false;
@@ -326,7 +246,7 @@ class HomeState extends State<Home> {
                     }
                   }
                 },
-                child: Text(tokens.isEmpty ? 'Login' : 'Logout'),
+                child: Text(Variables.tokens.isEmpty ? 'Login' : 'Logout'),
               ),
             ),
           ],
@@ -341,9 +261,9 @@ class HomeState extends State<Home> {
                     child: Center(
                       child: Text(
                         message ??
-                            (tokens.isEmpty
+                            (Variables.tokens.isEmpty
                                 ? 'You are not logged in.'
-                                : 'Logged in as $email'),
+                                : 'Logged in as ${Variables.parkingEmail}'),
                       ),
                     ),
                   )
@@ -409,12 +329,8 @@ class HomeState extends State<Home> {
                                                                     ' ', '')
                                                                 .toUpperCase(),
                                                             permit!,
-                                                            tokens[1],
-                                                            tokens[2],
-                                                            tokens[3],
                                                             orderedVehicleIds
-                                                                .isNotEmpty,
-                                                            docRef) ??
+                                                                .isNotEmpty) ??
                                                     permit;
                                                 if (numVehiclesBefore ==
                                                     permit!.vehicles.length) {
@@ -451,7 +367,7 @@ class HomeState extends State<Home> {
                                     ),
                                   const SizedBox(height: 10),
                                   Expanded(
-                                    child: isReorderable
+                                    child: Variables.isReorderable
                                         ? ReorderableListView(
                                             onReorder:
                                                 (oldIndex, newIndex) async {
@@ -472,9 +388,7 @@ class HomeState extends State<Home> {
                                                 permit!.vehicles
                                                     .insert(newIndex, vehicle);
                                               });
-                                              SharedPreferences prefs =
-                                                  await SharedPreferences
-                                                      .getInstance();
+
                                               for (Vehicle vehicle1
                                                   in permit!.vehicles) {
                                                 vehicle1.index = permit!
@@ -486,15 +400,14 @@ class HomeState extends State<Home> {
                                                   .map((vehicle) =>
                                                       vehicle.id.toString())
                                                   .toList();
-                                              await Functions
-                                                  .setOrUpdateFirestore(
-                                                      docRef,
-                                                      permit!.id.toString(),
+                                              await Functions.setOrUpdateFirestore(
+                                                  'permitIdToOrderedVehicleIds',
+                                                  'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
+                                                  orderedVehicleIds);
+                                              await Instances.prefs
+                                                  .setStringList(
                                                       permit!.id.toString(),
                                                       orderedVehicleIds);
-                                              await prefs.setStringList(
-                                                  permit!.id.toString(),
-                                                  orderedVehicleIds);
                                               if (mounted) {
                                                 setState(() {
                                                   if (selectedIndex ==
@@ -513,22 +426,16 @@ class HomeState extends State<Home> {
                                                   onPressed: () async {
                                                     Vehicle.sortByIsFavourite(
                                                         permit!.vehicles);
-                                                    await Functions
-                                                        .setOrUpdateFirestore(
-                                                            docRef,
-                                                            permit!.id
-                                                                .toString(),
-                                                            permit!.id
-                                                                .toString(),
-                                                            permit!.vehicles
-                                                                .map((vehicle) =>
-                                                                    vehicle.id
-                                                                        .toString())
-                                                                .toList());
-                                                    SharedPreferences prefs =
-                                                        await SharedPreferences
-                                                            .getInstance();
-                                                    prefs.remove(
+                                                    await Functions.setOrUpdateFirestore(
+                                                        'permitIdToOrderedVehicleIds',
+                                                        'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
+                                                        permit!.vehicles
+                                                            .map((vehicle) =>
+                                                                vehicle.id
+                                                                    .toString())
+                                                            .toList());
+
+                                                    Instances.prefs.remove(
                                                         'orderedVehicleIds');
                                                     setState(() {});
                                                   },
@@ -583,31 +490,24 @@ class HomeState extends State<Home> {
                                         child: GestureDetector(
                                           child: MiniPermitCard(
                                             miniPermit: miniPermits[index],
-                                            dateFormat: dateFormat,
+                                            dateFormat: Variables.dateFormat,
                                           ),
                                           onTap: () async {
                                             setState(() {
                                               Variables.isLoading = true;
                                             });
-                                            SharedPreferences prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            orderedVehicleIds = isReorderable
-                                                ? prefs.getStringList(
+                                            orderedVehicleIds = Variables
+                                                    .isReorderable
+                                                ? Instances.prefs.getStringList(
                                                         miniPermits[index]
                                                             .id
                                                             .toString()) ??
                                                     []
                                                 : [];
                                             permit = await Api().getPermit(
-                                                miniPermits[index]
-                                                    .id
-                                                    .toString(),
-                                                tokens[1],
-                                                tokens[2],
-                                                tokens[3],
-                                                orderedVehicleIds.isNotEmpty,
-                                                docRef);
+                                              miniPermits[index].id.toString(),
+                                              orderedVehicleIds.isNotEmpty,
+                                            );
                                             if (permit == null ||
                                                 permit!.vehicles.isNotEmpty) {
                                               try {

@@ -3,9 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:parking_permits_app/api.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
+import '../instances.dart';
 import '../variables.dart';
 
 class Login extends StatefulWidget {
@@ -21,11 +21,8 @@ class LoginState extends State<Login> {
       passwordController = TextEditingController();
   bool hasAuthenticationCookies = false,
       passVis = true,
-      displayLoginError = false,
-      useBioOrLocalAuth = false;
-  List<String> tokens = [];
-  String? email, password;
-  LocalAuthentication? auth;
+      displayLoginError = false;
+  String? password;
 
   @override
   void initState() {
@@ -38,32 +35,23 @@ class LoginState extends State<Login> {
       setState(() {
         Variables.isLoading = true;
       });
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      tokens = prefs.getStringList('tokens') ?? [];
-      email = prefs.getString('email');
-      if (email != null) {
-        auth = LocalAuthentication();
-        await auth!.isDeviceSupported().then(
-          (bioAuthSupport) {
-            if (bioAuthSupport) {
-              useBioOrLocalAuth = prefs.getBool('useBioOrLocalAuth') ?? true;
-            }
-          },
-        );
-        if (useBioOrLocalAuth) {
-          bool authenticated = await auth!.authenticate(
-              localizedReason: 'Login as $email',
+      Variables.tokens = Instances.prefs.getStringList('tokens') ?? [];
+      Variables.parkingEmail = Instances.prefs.getString('email');
+      if (Variables.parkingEmail != null) {
+        if (Variables.useBioOrLocalAuth) {
+          bool authenticated = await Instances.localAuth.authenticate(
+              localizedReason: 'Login as ${Variables.parkingEmail}',
               options: const AuthenticationOptions());
           if (authenticated) {
             var secureStorage = const FlutterSecureStorage();
             password = await secureStorage.read(key: 'password');
-            login(email!, password!);
+            login(Variables.parkingEmail!, password!);
           }
         }
       }
       if (mounted) {
         setState(() {
-          emailController.text = email ?? '';
+          emailController.text = Variables.parkingEmail ?? '';
           Variables.isLoading = false;
         });
       }
@@ -75,11 +63,10 @@ class LoginState extends State<Login> {
       setState(() {
         Variables.isLoading1 = true;
       });
-      tokens = await Api().login(email, password);
-      if (tokens.isNotEmpty) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList('tokens', tokens);
-        await prefs.setString('email', email);
+      await Api().login(email, password);
+      if (Variables.tokens.isNotEmpty) {
+        await Instances.prefs.setStringList('tokens', Variables.tokens);
+        await Instances.prefs.setString('email', email);
         var secureStorage = const FlutterSecureStorage();
         await secureStorage.write(key: 'password', value: password);
         // ignore: use_build_context_synchronously
@@ -111,7 +98,7 @@ class LoginState extends State<Login> {
               ? const Center(
                   child: CircularProgressIndicator(),
                 )
-              : tokens.isNotEmpty
+              : Variables.tokens.isNotEmpty
                   ? const Center(
                       child: Text('Logged in.'),
                     )
