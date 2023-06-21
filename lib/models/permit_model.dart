@@ -1775,12 +1775,15 @@ class Vehicle {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (doc != null && doc.exists) {
       docData = doc.data() as Map<String, dynamic>;
-      orderedVehicleIds = docData.containsKey(permitId)
-          ? doc[permitId]
-          : prefs.getStringList(permitId);
+      orderedVehicleIds = docData.containsKey('permitIdToOrderedVehicleIds')
+          ? docData['permitIdToOrderedVehicleIds'][permitId] ??
+              prefs.getStringList(permitId) ??
+              []
+          : prefs.getStringList(permitId) ?? [];
     } else {
-      orderedVehicleIds = prefs.getStringList(permitId)!;
+      orderedVehicleIds = prefs.getStringList(permitId) ?? [];
     }
+    if (orderedVehicleIds.isEmpty) return;
     Map<int, int> orderedVehicleIdsToIndices = {};
     for (int i = 0; i < orderedVehicleIds.length; i++) {
       orderedVehicleIdsToIndices[int.parse(orderedVehicleIds[i])] = i;

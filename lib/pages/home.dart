@@ -329,8 +329,8 @@ class HomeState extends State<Home> {
                                                                     ' ', '')
                                                                 .toUpperCase(),
                                                             permit!,
-                                                            orderedVehicleIds
-                                                                .isNotEmpty) ??
+                                                            Variables
+                                                                .isReorderable) ??
                                                     permit;
                                                 if (numVehiclesBefore ==
                                                     permit!.vehicles.length) {
@@ -506,7 +506,7 @@ class HomeState extends State<Home> {
                                                 : [];
                                             permit = await Api().getPermit(
                                               miniPermits[index].id.toString(),
-                                              orderedVehicleIds.isNotEmpty,
+                                              Variables.isReorderable,
                                             );
                                             if (permit == null ||
                                                 permit!.vehicles.isNotEmpty) {
