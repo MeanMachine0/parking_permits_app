@@ -3,7 +3,8 @@ import 'instances.dart';
 class Variables {
   static bool isLoading = false,
       isLoading1 = false,
-      notSilentlySigningIn = true;
+      notSilentlySigningIn = true,
+      isSyncing = false;
   static late bool bioOrLocalAuthIsSupported,
       useBioOrLocalAuth,
       useDetailedView,
