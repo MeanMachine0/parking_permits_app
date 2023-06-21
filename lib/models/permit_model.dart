@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../instances.dart';
 
 PermitModel permitModelFromJson(String str) =>
     PermitModel.fromJson(json.decode(str));
@@ -1772,16 +1773,15 @@ class Vehicle {
       List<Vehicle> vehicles, String permitId, DocumentSnapshot? doc) async {
     late List orderedVehicleIds;
     Map<String, dynamic>? docData;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     if (doc != null && doc.exists) {
       docData = doc.data() as Map<String, dynamic>;
       orderedVehicleIds = docData.containsKey('permitIdToOrderedVehicleIds')
           ? docData['permitIdToOrderedVehicleIds'][permitId] ??
-              prefs.getStringList(permitId) ??
+              Instances.prefs.getStringList(permitId) ??
               []
-          : prefs.getStringList(permitId) ?? [];
+          : Instances.prefs.getStringList(permitId) ?? [];
     } else {
-      orderedVehicleIds = prefs.getStringList(permitId) ?? [];
+      orderedVehicleIds = Instances.prefs.getStringList(permitId) ?? [];
     }
     if (orderedVehicleIds.isEmpty) return;
     Map<int, int> orderedVehicleIdsToIndices = {};
