@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:parking_permits_app/variables.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../functions.dart';
+import '../instances.dart';
 
 class Settings extends StatefulWidget {
   const Settings({Key? key}) : super(key: key);
@@ -18,15 +17,6 @@ class Settings extends StatefulWidget {
 }
 
 class SettingsState extends State<Settings> {
-  late bool bioAuthSupport, useBioOrLocalAuth, detailedView, isReorderable;
-  List<String>? tokens;
-  String? email;
-  late String dateFormat;
-  GoogleSignIn googleSignIn = GoogleSignIn();
-  FirebaseAuth auth = FirebaseAuth.instance;
-  User? user;
-  DocumentReference? docRef;
-
   @override
   void initState() {
     super.initState();
@@ -39,41 +29,9 @@ class SettingsState extends State<Settings> {
         Variables.isLoading = true;
       });
     }
-    bioAuthSupport = await LocalAuthentication().isDeviceSupported();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    AuthCredential? authCredential = await loginGoogle();
-    if (authCredential != null) {
-      user = await loginFirebase(authCredential);
-      if (user != null) {
-        docRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
-        if (docRef != null) {
-          DocumentSnapshot doc = await docRef!.get();
-          if (doc.exists) {
-            Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
-            if (docData.containsKey('preferences')) {
-              useBioOrLocalAuth =
-                  docData['preferences']['useBioOrLocalAuth'] ?? bioAuthSupport;
-              detailedView = docData['preferences']['detailedView'] ?? false;
-              isReorderable = docData['preferences']['isReorderable'] ?? false;
-              dateFormat = docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy';
-            } else {
-              getPrefs(prefs);
-            }
-          } else {
-            getPrefs(prefs);
-          }
-        } else {
-          getPrefs(prefs);
-        }
-      } else {
-        getPrefs(prefs);
-      }
-    } else {
-      getPrefs(prefs);
-    }
-    tokens = prefs.getStringList('tokens');
-    if (tokens != null) {
-      email = prefs.getString('email');
+    Variables.tokens = Instances.prefs.getStringList('tokens') ?? [];
+    if (Variables.tokens.isNotEmpty) {
+      Variables.parkingEmail = Instances.prefs.getString('email');
     }
     if (mounted) {
       setState(() {
@@ -82,18 +40,11 @@ class SettingsState extends State<Settings> {
     }
   }
 
-  void getPrefs(SharedPreferences prefs) {
-    useBioOrLocalAuth = prefs.getBool('useBioOrLocalAuth') ?? bioAuthSupport;
-    detailedView = prefs.getBool('detailedView') ?? false;
-    isReorderable = prefs.getBool('isReorderable') ?? false;
-    dateFormat = prefs.getString('dateFormat') ?? 'dd/MM/yyyy';
-  }
-
   Future<AuthCredential?> loginGoogle({bool pressed = false}) async {
     GoogleSignInAccount? googleAccount;
-    googleAccount = await googleSignIn.signInSilently();
+    googleAccount = await Instances.googleSignIn.signInSilently();
     if (pressed && googleAccount == null) {
-      googleAccount = await googleSignIn.signIn();
+      googleAccount = await Instances.googleSignIn.signIn();
     }
     if (googleAccount == null) return null;
     final GoogleSignInAuthentication googleAuth =
@@ -103,12 +54,6 @@ class SettingsState extends State<Settings> {
       idToken: googleAuth.idToken,
     );
     return authCredential;
-  }
-
-  Future<User?> loginFirebase(AuthCredential authCredential) async {
-    final User? user = auth.currentUser ??
-        (await auth.signInWithCredential(authCredential)).user;
-    return user;
   }
 
   @override
@@ -125,59 +70,53 @@ class SettingsState extends State<Settings> {
               ],
               child: Column(
                 children: [
-                  if (bioAuthSupport)
+                  if (Variables.bioOrLocalAuthIsSupported)
                     CheckboxListTile(
                       title: const Text('Local/Biometric Authentication'),
-                      value: useBioOrLocalAuth,
+                      value: Variables.useBioOrLocalAuth,
                       onChanged: (newValue) async {
-                        await Functions.setOrUpdateFirestore(
-                            docRef,
-                            'preferences',
-                            'preferences.useBioOrLocalAuth',
-                            newValue!);
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        prefs.setBool('useBioOrLocalAuth', newValue);
+                        if (Instances.user != null) {
+                          await Functions.setOrUpdateFirestore('preferences',
+                              'preferences.useBioOrLocalAuth', newValue!);
+                        }
+                        Instances.prefs.setBool('useBioOrLocalAuth', newValue!);
                         setState(() {
-                          useBioOrLocalAuth = newValue;
+                          Variables.useBioOrLocalAuth = newValue;
                         });
                       },
                     ),
                   CheckboxListTile(
                     title: const Text('Detailed View'),
-                    value: detailedView,
+                    value: Variables.useDetailedView,
                     onChanged: (newValue) async {
-                      await Functions.setOrUpdateFirestore(docRef,
-                          'preferences', 'preferences.detailedView', newValue!);
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      prefs.setBool('detailedView', newValue);
+                      if (Instances.user != null) {
+                        await Functions.setOrUpdateFirestore('preferences',
+                            'preferences.detailedView', newValue!);
+                      }
+                      Instances.prefs.setBool('detailedView', newValue!);
                       setState(() {
-                        detailedView = newValue;
+                        Variables.useDetailedView = newValue;
                       });
                     },
                   ),
                   CheckboxListTile(
                     title: const Text('Reorderable Vehicles'),
-                    value: isReorderable,
+                    value: Variables.isReorderable,
                     onChanged: (newValue) async {
-                      await Functions.setOrUpdateFirestore(
-                          docRef,
-                          'preferences',
-                          'preferences.isReorderable',
-                          newValue!);
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      prefs.setBool('isReorderable', newValue);
+                      if (Instances.user != null) {
+                        await Functions.setOrUpdateFirestore('preferences',
+                            'preferences.isReorderable', newValue!);
+                      }
+                      Instances.prefs.setBool('isReorderable', newValue!);
                       setState(() {
-                        isReorderable = newValue;
+                        Variables.isReorderable = newValue;
                       });
                     },
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: DropdownButtonFormField(
-                      value: dateFormat,
+                      value: Variables.dateFormat,
                       decoration:
                           const InputDecoration(labelText: 'Date Format'),
                       items: ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy/MM/dd']
@@ -188,17 +127,15 @@ class SettingsState extends State<Settings> {
                         );
                       }).toList(),
                       onChanged: (newDateFormat) async {
-                        if (newDateFormat != dateFormat) {
-                          await Functions.setOrUpdateFirestore(
-                              docRef,
-                              'preferences',
-                              'preferences.dateFormat',
-                              newDateFormat!);
-                          SharedPreferences prefs =
-                              await SharedPreferences.getInstance();
-                          await prefs.setString('dateFormat', newDateFormat);
+                        if (newDateFormat != Variables.dateFormat) {
+                          if (Instances.user != null) {
+                            await Functions.setOrUpdateFirestore('preferences',
+                                'preferences.dateFormat', newDateFormat!);
+                          }
+                          await Instances.prefs
+                              .setString('dateFormat', newDateFormat!);
                           setState(() {
-                            dateFormat = newDateFormat;
+                            Variables.dateFormat = newDateFormat;
                           });
                         }
                       },
@@ -207,54 +144,75 @@ class SettingsState extends State<Settings> {
                   const Expanded(
                     child: SizedBox(),
                   ),
-                  Text(email != null
-                      ? 'Logged in as $email'
+                  Text(Variables.parkingEmail != null
+                      ? 'Logged in as ${Variables.parkingEmail}'
                       : 'Not logged in to parking account'),
-                  if (user != null)
-                    Text('Signed in to Google as ${user!.email}'),
+                  if (Instances.user != null)
+                    Text('Signed in to Google as ${Instances.user!.email}'),
                   const SizedBox(height: 6),
                   ElevatedButton(
                     onPressed: () async {
-                      if (user == null) {
+                      if (Instances.user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
                         if (authCredential != null) {
-                          user = await loginFirebase(authCredential);
+                          try {
+                            setState(() {
+                              Variables.isLoading = true;
+                            });
+                            Instances.user = (await Instances.auth
+                                    .signInWithCredential(authCredential))
+                                .user;
+                            Instances.docRef = FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(Instances.user!.uid);
+                            DocumentSnapshot doc =
+                                await Instances.docRef!.get();
+                            await Functions.syncFirestore(!doc.exists);
+                            // ignore: empty_catches
+                          } catch (e) {}
                           if (mounted) {
-                            setState(() {});
+                            setState(() {
+                              Variables.isLoading = false;
+                            });
                           }
                         }
                       } else {
-                        await googleSignIn.signOut();
-                        await auth.signOut();
-                        user = null;
+                        await Instances.googleSignIn.signOut();
+                        await Instances.auth.signOut();
+                        Instances.user = null;
+                        Instances.docRef = null;
                         if (mounted) {
                           setState(() {});
                         }
                       }
                     },
                     child: Text(
-                      user == null
+                      Instances.user == null
                           ? 'Sign in with Google to unlock more features'
                           : 'Sign out of Google',
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      if (docRef != null) {
-                        await docRef!.delete();
-                        user = null;
+                      setState(() {
+                        Variables.isLoading = true;
+                      });
+                      if (Instances.docRef != null) {
+                        await Instances.docRef!.delete();
+                        await Instances.googleSignIn.signOut();
+                        await Instances.auth.signOut();
+                        Instances.user = null;
                       }
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      await prefs.clear();
+                      await Instances.prefs.clear();
                       var secureStorage = const FlutterSecureStorage();
                       await secureStorage.delete(key: 'password');
                       setState(() {
-                        detailedView = false;
-                        isReorderable = false;
-                        tokens = null;
-                        email = null;
+                        Variables.useDetailedView = false;
+                        Variables.isReorderable = false;
+                        Variables.tokens.clear();
+                        Variables.parkingEmail = null;
+                        Variables.isLoading = false;
                       });
                     },
                     child: const Text(
