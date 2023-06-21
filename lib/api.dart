@@ -184,14 +184,8 @@ class Api {
               prefs.getBool('${vehicle.id}IsFavourite') ?? false;
         }
       }
-      if (customSort) {
-        bool previouslySorted =
-            prefs.getStringList(permitId.toString()) != null;
-        if (previouslySorted) {
-          await Vehicle.sortByCustom(permit.vehicles, permitId, doc);
-        } else {
-          Vehicle.sortByIsFavourite(permit.vehicles);
-        }
+      if (customSort && prefs.getStringList(permitId.toString()) != null) {
+        await Vehicle.sortByCustom(permit.vehicles, permitId, doc);
       } else {
         Vehicle.sortByIsFavourite(permit.vehicles);
       }
