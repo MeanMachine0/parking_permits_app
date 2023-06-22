@@ -205,6 +205,8 @@ class SettingsState extends State<Settings> {
                                   overwriteFirestore);
                               Variables.isSyncing = false;
                               if (success) await Functions.updateStatics();
+                            } else {
+                              await Functions.googleFirebaseSignOut();
                             }
                             if (mounted) {
                               setState(() {
@@ -220,10 +222,7 @@ class SettingsState extends State<Settings> {
                           }
                         }
                       } else {
-                        await Instances.googleSignIn.signOut();
-                        await Instances.auth.signOut();
-                        Instances.user = null;
-                        Instances.docRef = null;
+                        await Functions.googleFirebaseSignOut();
                         if (mounted) {
                           setState(() {
                             Variables.isLoading = false;
@@ -244,9 +243,7 @@ class SettingsState extends State<Settings> {
                       });
                       if (Instances.docRef != null) {
                         await Instances.docRef!.delete();
-                        await Instances.googleSignIn.signOut();
-                        await Instances.auth.signOut();
-                        Instances.user = null;
+                        await Functions.googleFirebaseSignOut();
                       }
                       await Instances.prefs.clear();
                       var secureStorage = const FlutterSecureStorage();
