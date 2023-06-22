@@ -44,7 +44,8 @@ class SettingsState extends State<Settings> {
     GoogleSignInAccount? googleAccount;
     googleAccount = await Instances.googleSignIn.signInSilently();
     if (pressed && googleAccount == null) {
-      googleAccount = await Instances.googleSignIn.signIn();
+      googleAccount =
+          await Instances.googleSignIn.signIn().catchError((onError) => null);
     }
     if (googleAccount == null) return null;
     final GoogleSignInAuthentication googleAuth =
@@ -185,11 +186,11 @@ class SettingsState extends State<Settings> {
                       if (Instances.user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
-                        setState(() {
-                          Variables.isLoading = true;
-                        });
                         if (authCredential != null) {
                           try {
+                            setState(() {
+                              Variables.isLoading = true;
+                            });
                             Instances.user = (await Instances.auth
                                     .signInWithCredential(authCredential))
                                 .user;
