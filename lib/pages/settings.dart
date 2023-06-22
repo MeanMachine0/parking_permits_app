@@ -32,7 +32,7 @@ class SettingsState extends State<Settings> {
     if (Instances.user != null) await Functions.updateStatics();
     Variables.tokens = Instances.prefs.getStringList('tokens') ?? [];
     if (Variables.tokens.isNotEmpty) {
-      Variables.parkingEmail = Instances.prefs.getString('email');
+      Variables.parkingEmail = Instances.prefs.getString('parkingEmail');
     }
     if (mounted) {
       setState(() {

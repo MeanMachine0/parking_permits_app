@@ -36,7 +36,7 @@ class LoginState extends State<Login> {
         Variables.isLoading = true;
       });
       Variables.tokens = Instances.prefs.getStringList('tokens') ?? [];
-      Variables.parkingEmail = Instances.prefs.getString('email');
+      Variables.parkingEmail = Instances.prefs.getString('parkingEmail');
       if (Variables.parkingEmail != null) {
         if (Variables.useBioOrLocalAuth) {
           bool authenticated = await Instances.localAuth.authenticate(
@@ -66,7 +66,7 @@ class LoginState extends State<Login> {
       await Api().login(email, password);
       if (Variables.tokens.isNotEmpty) {
         await Instances.prefs.setStringList('tokens', Variables.tokens);
-        await Instances.prefs.setString('email', email);
+        await Instances.prefs.setString('parkingEmail', email);
         var secureStorage = const FlutterSecureStorage();
         await secureStorage.write(key: 'password', value: password);
         // ignore: use_build_context_synchronously
