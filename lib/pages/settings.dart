@@ -29,6 +29,7 @@ class SettingsState extends State<Settings> {
         Variables.isLoading = true;
       });
     }
+    if (Instances.user != null) await Functions.updateStatics();
     Variables.tokens = Instances.prefs.getStringList('tokens') ?? [];
     if (Variables.tokens.isNotEmpty) {
       Variables.parkingEmail = Instances.prefs.getString('email');
