@@ -31,6 +31,13 @@ class Functions {
     }
   }
 
+  static Future<void> googleFirebaseSignOut() async {
+    await Instances.googleSignIn.signOut();
+    await Instances.auth.signOut();
+    Instances.user = null;
+    Instances.docRef = null;
+  }
+
   static Future<void> updateStatics() async {
     Instances.docRef =
         FirebaseFirestore.instance.collection('users').doc(Instances.user!.uid);
