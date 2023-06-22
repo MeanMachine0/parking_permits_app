@@ -42,15 +42,22 @@ class Functions {
           Variables.useBioOrLocalAuth = docData['preferences']
                   ['useBioOrLocalAuth'] &&
               Variables.bioOrLocalAuthIsSupported;
+          await Instances.prefs
+              .setBool('useBioOrLocalAuth', Variables.useBioOrLocalAuth);
         }
         if (docData['preferences']['useDetailedView'] != null) {
           Variables.useDetailedView = docData['preferences']['useDetailedView'];
+          await Instances.prefs
+              .setBool('useDetailedView', Variables.useDetailedView);
         }
         if (docData['preferences']['isReorderable'] != null) {
           Variables.isReorderable = docData['preferences']['isReorderable'];
+          await Instances.prefs
+              .setBool('isReorderable', Variables.isReorderable);
         }
         if (docData['preferences']['dateFormat'] != null) {
           Variables.dateFormat = docData['preferences']['dateFormat'];
+          await Instances.prefs.setString('dateFormat', Variables.dateFormat);
         }
       }
     }
