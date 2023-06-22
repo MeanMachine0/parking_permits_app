@@ -86,6 +86,7 @@ class LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        if (Variables.tokens.isEmpty) Variables.parkingEmail = null;
         return !(Variables.isLoading || Variables.isLoading1);
       },
       child: Scaffold(
