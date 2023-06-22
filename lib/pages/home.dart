@@ -83,6 +83,8 @@ class HomeState extends State<Home> {
 
   void logout() async {
     Variables.tokens.clear();
+    Variables.parkingEmail = null;
+    await Instances.prefs.remove('tokens');
     permitData.clear();
     permit = null;
     miniPermits.clear();
@@ -90,7 +92,6 @@ class HomeState extends State<Home> {
     failure = false;
     addVehicleFailure = null;
     message = null;
-    await Instances.prefs.remove('tokens');
     setState(() {});
   }
 
