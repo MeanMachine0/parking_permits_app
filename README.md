@@ -36,6 +36,14 @@ Having trouble with FAD, use these steps:
 
 flutter run --release
 
+### Temp changes to work on older Flutter version
+In pubsepc.yaml change to 
+environment:
+  sdk: '>=2.18.2 <3.0.0'
+
+and
+intl: ^0.17.0
+
 ### To build for Firebase App Distribution
 Some useful info at https://docs.flutter.dev/deployment/ios
 
