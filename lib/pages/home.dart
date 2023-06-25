@@ -209,12 +209,12 @@ class HomeState extends State<Home> {
               ? const Text('My Permits')
               : !firstPass
                   ? Text(permit?.permitNumber ?? 'Permit not found')
-                  : permit?.address.pafAddress.buildingName == '' &&
-                          permit?.address.street != ''
+                  : permit?.address?.pafAddress?.buildingName == '' &&
+                          permit?.address?.street != ''
                       ? Text(
-                          '${permit?.address.number} ${permit?.address.street}')
-                      : permit?.address.pafAddress.buildingName != null
-                          ? Text(permit!.address.pafAddress.buildingName)
+                          '${permit?.address?.number} ${permit?.address?.street}')
+                      : permit?.address?.pafAddress?.buildingName != null
+                          ? Text(permit!.address!.pafAddress!.buildingName!)
                           : const Text('Home'),
           scrolledUnderElevation: 0,
           actions: [
