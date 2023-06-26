@@ -175,8 +175,13 @@ class Api {
       for (Vehicle vehicle in permit.vehicles) {
         if (useFirestoreVehicles) {
           vehicle.note = doc['vehicles']?[vehicle.id.toString()]?['note'];
+          if (vehicle.note != null) {
+            await Instances.prefs.setString('${vehicle.id}Note', vehicle.note!);
+          }
           vehicle.isFavourite =
               doc['vehicles']?[vehicle.id.toString()]?['isFavourite'] ?? false;
+          await Instances.prefs
+              .setBool('${vehicle.id}IsFavourite', vehicle.isFavourite);
         } else {
           vehicle.note = Instances.prefs.getString('${vehicle.id}Note');
           vehicle.isFavourite =
