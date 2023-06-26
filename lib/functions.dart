@@ -93,6 +93,7 @@ class Functions {
     List<Map<String, List<String>>> orderedVehicleIds = [];
     late DocumentSnapshot doc;
     List<String> vehicleIds = [];
+    Variables.isSyncing = true;
     try {
       doc = await Instances.docRef!.get();
       if (overwriteFirestore) {
@@ -105,8 +106,10 @@ class Functions {
             ? []
             : await Api().getMiniPermits(false, false);
         if (permitData.isEmpty && Variables.tokens.isNotEmpty) {
+          Variables.isSyncing = false;
           return false;
         } else if (permitData.isNotEmpty && permitData[0] == false) {
+          Variables.isSyncing = false;
           return false;
         } else if (permitData.isNotEmpty) {
           miniPermits = permitData as List<MiniPermitModel>;
@@ -204,8 +207,10 @@ class Functions {
         }
       }
     } catch (e) {
+      Variables.isSyncing = false;
       return false;
     }
+    Variables.isSyncing = false;
     return true;
   }
 }
