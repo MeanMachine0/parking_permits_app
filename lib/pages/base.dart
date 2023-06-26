@@ -56,30 +56,36 @@ class BaseState extends State<Base> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages.elementAt(_selectedIndex),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Colours.deepDarkGray,
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            if ((!Variables.isLoading && !Variables.isLoading1) |
-                Variables.notSilentlySigningIn) {
-              _selectedIndex = index;
-            }
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+      bottomNavigationBar: bannerAdHasLoaded
+          ? SizedBox(
+              height: bannerAd.size.height.toDouble(),
+              width: bannerAd.size.width.toDouble(),
+              child: AdWidget(ad: bannerAd),
+            )
+          : NavigationBar(
+              backgroundColor: Colours.deepDarkGray,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  if ((!Variables.isLoading && !Variables.isLoading1) |
+                      Variables.notSilentlySigningIn) {
+                    _selectedIndex = index;
+                  }
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: 'Settings',
+                ),
+              ],
+            ),
     );
   }
 }
