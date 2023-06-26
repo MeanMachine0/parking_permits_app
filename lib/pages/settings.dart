@@ -184,6 +184,8 @@ class SettingsState extends State<Settings> {
                   const SizedBox(height: 6),
                   ElevatedButton(
                     onPressed: () async {
+                      bool isNewUser = false;
+                      bool success = false;
                       if (Instances.user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
@@ -192,19 +194,28 @@ class SettingsState extends State<Settings> {
                             setState(() {
                               Variables.isLoading = true;
                             });
-                            Instances.user = (await Instances.auth
-                                    .signInWithCredential(authCredential))
-                                .user;
+                            await Instances.auth
+                                .signInWithCredential(authCredential)
+                                .then((UserCredential userCredential) {
+                              Instances.user = userCredential.user;
+                              isNewUser =
+                                  userCredential.additionalUserInfo!.isNewUser;
+                            });
                             Instances.docRef = FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(Instances.user!.uid);
-                            bool? overwriteFirestore = await openDialog();
-                            if (overwriteFirestore != null) {
-                              Variables.isSyncing = true;
-                              bool success = await Functions.syncFirestore(
-                                  overwriteFirestore);
-                              Variables.isSyncing = false;
-                              if (success) await Functions.updateStatics();
+                            if (isNewUser) {
+                              success = await Functions.syncFirestore(true);
+                              Variables.isLoading = false;
+                            } else {
+                              bool? overwriteFirestore = await openDialog();
+                              if (overwriteFirestore != null) {
+                                success = await Functions.syncFirestore(
+                                    overwriteFirestore);
+                              }
+                            }
+                            if (success) {
+                              await Functions.updateStatics();
                             } else {
                               await Functions.googleFirebaseSignOut();
                             }
@@ -214,6 +225,7 @@ class SettingsState extends State<Settings> {
                               });
                             }
                           } catch (e) {
+                            await Functions.googleFirebaseSignOut();
                             if (mounted) {
                               setState(() {
                                 Variables.isLoading = false;
