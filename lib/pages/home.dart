@@ -47,12 +47,11 @@ class HomeState extends State<Home> {
       if (!await Instances.googleSignIn.isSignedIn()) {
         await Functions.silentSignIn();
       }
-      Duration buffer = const Duration(minutes: 30, seconds: 10);
-      DateTime expiry = Variables.tokens.isNotEmpty
+      expiry = Variables.tokens.isNotEmpty
           ? DateTime.parse(Variables.tokens.last)
           : DateTime.now();
       permitData = Variables.tokens.isEmpty ||
-              DateTime.now().add(buffer).toUtc().isAfter(expiry)
+              DateTime.now().add(Durations.buffer).toUtc().isAfter(expiry)
           ? []
           : await Api().getMiniPermits(
               !Variables.useDetailedView,
@@ -79,7 +78,29 @@ class HomeState extends State<Home> {
     }
   }
 
-  void logout() async {
+  Future<void> refresh() async {
+    if (DateTime.now().add(Durations.buffer).toUtc().isAfter(expiry)) {
+      await logout();
+      message = "Your session has expired; please login again.";
+    }
+    if (permit != null) {
+      permit =
+          await Api().getPermit(permit!.id.toString(), Variables.isReorderable);
+      if (permit != null) {
+        activeVehicle?.isActive = false;
+        activeVehicle =
+            permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
+      }
+    } else if (miniPermits.isNotEmpty) {
+      miniPermits = await Api().getMiniPermits(
+        !Variables.useDetailedView,
+        Variables.isReorderable,
+      ) as List<MiniPermitModel>;
+    }
+    setState(() {});
+  }
+
+  Future<void> logout() async {
     Variables.tokens.clear();
     Variables.parkingEmail = null;
     await Instances.prefs.remove('tokens');
@@ -190,370 +211,395 @@ class HomeState extends State<Home> {
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading:
-              !firstPass && miniPermits.isEmpty && Variables.tokens.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        selectedIndex = -1;
-                        permit = null;
-                        addVehicleFailure = null;
-                        firstPass = true;
-                        getData();
-                      },
-                      icon: const Icon(Icons.arrow_back))
-                  : null,
-          title: miniPermits.isNotEmpty
-              ? const Text('My Permits')
-              : !firstPass
-                  ? Text(permit?.permitNumber ?? 'Permit not found')
-                  : permit?.address?.pafAddress?.buildingName == '' &&
-                          permit?.address?.street != ''
-                      ? Text(
-                          '${permit?.address?.number} ${permit?.address?.street}')
-                      : permit?.address?.pafAddress?.buildingName != null
-                          ? Text(permit!.address!.pafAddress!.buildingName!)
-                          : const Text('Home'),
-          scrolledUnderElevation: 0,
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () async {
-                    permit = null;
-                    miniPermits.clear();
-                    firstPass = true;
-                    await Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const Base(page: Settings())));
-                    getData();
-                  }),
-            ),
-          ],
-        ),
-        body: Variables.isLoading || Variables.isLoading1
-            ? const Center(child: CircularProgressIndicator())
-            : permitData.isEmpty && permit == null
-                ? Animate(
-                    effects: const [
-                      FadeEffect(),
-                    ],
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            message ??
-                                (Variables.tokens.isEmpty
-                                    ? 'Not logged in to permit account'
-                                    : 'Logged in as ${Variables.parkingEmail}'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              setState(() {
-                                Variables.isLoading = true;
-                              });
-                              if (Variables.tokens.isEmpty) {
-                                bool success = await Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const Base(page: Login()))) ??
-                                    false;
-                                if (success && mounted) {
-                                  setState(() {
-                                    Variables.isLoading1 = true;
-                                  });
-                                  getData();
-                                } else {
-                                  setState(() {
-                                    Variables.isLoading = false;
-                                  });
-                                }
-                              } else {
-                                logout();
-                                Variables.isLoading = false;
-                                if (mounted) {
-                                  setState(() {});
-                                }
-                              }
-                            },
-                            child: Text(Variables.tokens.isEmpty
-                                ? 'Login to Permit Account'
-                                : 'Logout of Permit Account'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : failure
+          appBar: AppBar(
+            leading:
+                !firstPass && miniPermits.isEmpty && Variables.tokens.isNotEmpty
+                    ? IconButton(
+                        onPressed: () {
+                          selectedIndex = -1;
+                          permit = null;
+                          addVehicleFailure = null;
+                          firstPass = true;
+                          getData();
+                        },
+                        icon: const Icon(Icons.arrow_back))
+                    : null,
+            title: miniPermits.isNotEmpty
+                ? const Text('My Permits')
+                : !firstPass
+                    ? Text(permit?.permitNumber ?? 'Permit not found')
+                    : permit?.address?.pafAddress?.buildingName == '' &&
+                            permit?.address?.street != ''
+                        ? Text(
+                            '${permit?.address?.number} ${permit?.address?.street}')
+                        : permit?.address?.pafAddress?.buildingName != null
+                            ? Text(permit!.address!.pafAddress!.buildingName!)
+                            : const Text('Home'),
+            scrolledUnderElevation: 0,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () async {
+                      permit = null;
+                      miniPermits.clear();
+                      firstPass = true;
+                      await Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const Base(page: Settings())));
+                      getData();
+                    }),
+              ),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: () => refresh(),
+            color: Colours.lightBlue,
+            child: Variables.isLoading || Variables.isLoading1
+                ? const Center(child: CircularProgressIndicator())
+                : permitData.isEmpty && permit == null
                     ? Animate(
                         effects: const [
                           FadeEffect(),
                         ],
-                        child: const Center(
-                          child: Text(
-                            'You have no permits to view or an error occurred whilst attempting to retreive them.',
-                            textAlign: TextAlign.center,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                message ??
+                                    (Variables.tokens.isEmpty
+                                        ? 'Not logged in to permit account'
+                                        : 'Logged in as ${Variables.parkingEmail}'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  setState(() {
+                                    Variables.isLoading = true;
+                                  });
+                                  if (Variables.tokens.isEmpty) {
+                                    bool success = await Navigator.of(context)
+                                            .push(MaterialPageRoute(
+                                                builder: (_) => const Base(
+                                                    page: Login()))) ??
+                                        false;
+                                    if (success && mounted) {
+                                      setState(() {
+                                        Variables.isLoading1 = true;
+                                      });
+                                      getData();
+                                    } else {
+                                      setState(() {
+                                        Variables.isLoading = false;
+                                      });
+                                    }
+                                  } else {
+                                    logout();
+                                    Variables.isLoading = false;
+                                    if (mounted) {
+                                      setState(() {});
+                                    }
+                                  }
+                                },
+                                child: Text(Variables.tokens.isEmpty
+                                    ? 'Login to Permit Account'
+                                    : 'Logout of Permit Account'),
+                              ),
+                            ],
                           ),
                         ),
                       )
-                    : permit != null
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Animate(
-                              effects: const [
-                                FadeEffect(),
-                              ],
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10),
-                                    child: Row(
-                                      children: [
-                                        activeVehicle != null
-                                            ? Text(
-                                                'Permit assigned to ${activeVehicle!.vrm}${(activeVehicle!.note != null && activeVehicle!.note!.replaceAll(' ', '') != '') ? ' - ${activeVehicle!.note}' : ''}',
+                    : failure
+                        ? Animate(
+                            effects: const [
+                              FadeEffect(),
+                            ],
+                            child: const Center(
+                              child: Text(
+                                'You have no permits to view or an error occurred whilst attempting to retreive them.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        : permit != null
+                            ? Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: Animate(
+                                  effects: const [
+                                    FadeEffect(),
+                                  ],
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                        child: Row(
+                                          children: [
+                                            activeVehicle != null
+                                                ? Text(
+                                                    'Permit assigned to ${activeVehicle!.vrm}${(activeVehicle!.note != null && activeVehicle!.note!.replaceAll(' ', '') != '') ? ' - ${activeVehicle!.note}' : ''}',
+                                                  )
+                                                : const Text(
+                                                    'Permit is not currently assigned to a vehicle.'),
+                                          ],
+                                        ),
+                                      ),
+                                      if (!permit!.isExpired &&
+                                          permit!.vehicles.length < 20)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: TextField(
+                                                  decoration:
+                                                      const InputDecoration(
+                                                          label: Text(
+                                                    'Add vehicle to permit (vrm)',
+                                                    textAlign: TextAlign.center,
+                                                  )),
+                                                  onSubmitted: (vrm) async {
+                                                    setState(() {
+                                                      Variables.isLoading =
+                                                          true;
+                                                    });
+                                                    int numVehiclesBefore =
+                                                        permit!.vehicles.length;
+                                                    permit = await Api()
+                                                            .addVehicleToPermit(
+                                                                vrm
+                                                                    .replaceAll(
+                                                                        ' ', '')
+                                                                    .toUpperCase(),
+                                                                permit!,
+                                                                Variables
+                                                                    .isReorderable) ??
+                                                        permit;
+                                                    if (numVehiclesBefore ==
+                                                        permit!
+                                                            .vehicles.length) {
+                                                      addVehicleFailure = true;
+                                                    } else {
+                                                      addVehicleFailure = false;
+                                                    }
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        Variables.isLoading =
+                                                            false;
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                              if (addVehicleFailure != null)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 10),
+                                                  child: Text(
+                                                    addVehicleFailure!
+                                                        ? 'Failed!'
+                                                        : 'Success!',
+                                                    style: TextStyle(
+                                                      color: addVehicleFailure!
+                                                          ? Colours.red
+                                                          : Colours.green,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      const SizedBox(height: 10),
+                                      Expanded(
+                                        child: Variables.isReorderable
+                                            ? ReorderableListView(
+                                                onReorder:
+                                                    (oldIndex, newIndex) async {
+                                                  setState(() {
+                                                    if (newIndex ==
+                                                        permit!.vehicles
+                                                                .length +
+                                                            1) {
+                                                      newIndex = permit!
+                                                              .vehicles.length -
+                                                          1;
+                                                    } else if (newIndex >
+                                                        oldIndex) {
+                                                      newIndex--;
+                                                    }
+                                                    final Vehicle vehicle =
+                                                        permit!.vehicles
+                                                            .removeAt(oldIndex);
+                                                    permit!.vehicles.insert(
+                                                        newIndex, vehicle);
+                                                  });
+
+                                                  for (Vehicle vehicle1
+                                                      in permit!.vehicles) {
+                                                    vehicle1.index = permit!
+                                                        .vehicles
+                                                        .indexOf(vehicle1);
+                                                  }
+                                                  orderedVehicleIds = permit!
+                                                      .vehicles
+                                                      .map((vehicle) =>
+                                                          vehicle.id.toString())
+                                                      .toList();
+                                                  await Functions.setOrUpdateFirestore(
+                                                      'permitIdToOrderedVehicleIds',
+                                                      'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
+                                                      orderedVehicleIds);
+                                                  await Instances.prefs
+                                                      .setStringList(
+                                                          permit!.id.toString(),
+                                                          orderedVehicleIds);
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      if (selectedIndex ==
+                                                          oldIndex) {
+                                                        selectedIndex =
+                                                            newIndex;
+                                                      }
+                                                    });
+                                                  }
+                                                },
+                                                footer: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 4),
+                                                  child: Center(
+                                                    child: ElevatedButton(
+                                                      onPressed: () async {
+                                                        Vehicle
+                                                            .sortByIsFavourite(
+                                                                permit!
+                                                                    .vehicles);
+                                                        await Functions.setOrUpdateFirestore(
+                                                            'permitIdToOrderedVehicleIds',
+                                                            'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
+                                                            permit!.vehicles
+                                                                .map((vehicle) =>
+                                                                    vehicle.id
+                                                                        .toString())
+                                                                .toList());
+
+                                                        Instances.prefs.remove(
+                                                            'orderedVehicleIds');
+                                                        setState(() {});
+                                                      },
+                                                      child: const Text(
+                                                          'Reset custom ordering'),
+                                                    ),
+                                                  ),
+                                                ),
+                                                children: [
+                                                  for (Vehicle vehicle
+                                                      in permit!.vehicles)
+                                                    Animate(
+                                                      key: ValueKey(vehicle),
+                                                      effects: const [
+                                                        SlideEffect(),
+                                                      ],
+                                                      child:
+                                                          interactiveVehicleCard(
+                                                              vehicle,
+                                                              permit!.vehicles
+                                                                  .indexOf(
+                                                                      vehicle)),
+                                                    ),
+                                                ],
                                               )
-                                            : const Text(
-                                                'Permit is not currently assigned to a vehicle.'),
-                                      ],
-                                    ),
+                                            : ListView.builder(
+                                                itemCount:
+                                                    permit!.vehicles.length,
+                                                itemBuilder: (content, index) {
+                                                  return Animate(
+                                                    effects: const [
+                                                      SlideEffect(),
+                                                    ],
+                                                    child:
+                                                        interactiveVehicleCard(
+                                                            permit!.vehicles[
+                                                                index],
+                                                            index),
+                                                  );
+                                                },
+                                              ),
+                                      ),
+                                    ],
                                   ),
-                                  if (!permit!.isExpired &&
-                                      permit!.vehicles.length < 20)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: TextField(
-                                              decoration: const InputDecoration(
-                                                  label: Text(
-                                                'Add vehicle to permit (vrm)',
-                                                textAlign: TextAlign.center,
-                                              )),
-                                              onSubmitted: (vrm) async {
+                                ),
+                              )
+                            : Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.builder(
+                                        itemCount: miniPermits.length,
+                                        itemBuilder: (content, index) {
+                                          return Animate(
+                                            effects: const [SlideEffect()],
+                                            child: GestureDetector(
+                                              child: MiniPermitCard(
+                                                miniPermit: miniPermits[index],
+                                                dateFormat:
+                                                    Variables.dateFormat,
+                                              ),
+                                              onTap: () async {
                                                 setState(() {
                                                   Variables.isLoading = true;
                                                 });
-                                                int numVehiclesBefore =
-                                                    permit!.vehicles.length;
-                                                permit = await Api()
-                                                        .addVehicleToPermit(
-                                                            vrm
-                                                                .replaceAll(
-                                                                    ' ', '')
-                                                                .toUpperCase(),
-                                                            permit!,
-                                                            Variables
-                                                                .isReorderable) ??
-                                                    permit;
-                                                if (numVehiclesBefore ==
-                                                    permit!.vehicles.length) {
-                                                  addVehicleFailure = true;
-                                                } else {
-                                                  addVehicleFailure = false;
+                                                orderedVehicleIds = Variables
+                                                        .isReorderable
+                                                    ? Instances.prefs
+                                                            .getStringList(
+                                                                miniPermits[
+                                                                        index]
+                                                                    .id
+                                                                    .toString()) ??
+                                                        []
+                                                    : [];
+                                                permit = await Api().getPermit(
+                                                  miniPermits[index]
+                                                      .id
+                                                      .toString(),
+                                                  Variables.isReorderable,
+                                                );
+                                                if (permit == null ||
+                                                    permit!
+                                                        .vehicles.isNotEmpty) {
+                                                  try {
+                                                    activeVehicle = permit!
+                                                        .vehicles
+                                                        .firstWhere((vehicle) =>
+                                                            vehicle.isActive ==
+                                                            true);
+                                                  } catch (e) {
+                                                    activeVehicle = null;
+                                                  }
                                                 }
+                                                miniPermits.clear();
                                                 if (mounted) {
                                                   setState(() {
+                                                    firstPass = false;
                                                     Variables.isLoading = false;
                                                   });
                                                 }
                                               },
                                             ),
-                                          ),
-                                          if (addVehicleFailure != null)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 10),
-                                              child: Text(
-                                                addVehicleFailure!
-                                                    ? 'Failed!'
-                                                    : 'Success!',
-                                                style: TextStyle(
-                                                  color: addVehicleFailure!
-                                                      ? Colours.red
-                                                      : Colours.green,
-                                                  fontSize: 18,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
+                                          );
+                                        },
                                       ),
                                     ),
-                                  const SizedBox(height: 10),
-                                  Expanded(
-                                    child: Variables.isReorderable
-                                        ? ReorderableListView(
-                                            onReorder:
-                                                (oldIndex, newIndex) async {
-                                              setState(() {
-                                                if (newIndex ==
-                                                    permit!.vehicles.length +
-                                                        1) {
-                                                  newIndex =
-                                                      permit!.vehicles.length -
-                                                          1;
-                                                } else if (newIndex >
-                                                    oldIndex) {
-                                                  newIndex--;
-                                                }
-                                                final Vehicle vehicle = permit!
-                                                    .vehicles
-                                                    .removeAt(oldIndex);
-                                                permit!.vehicles
-                                                    .insert(newIndex, vehicle);
-                                              });
-
-                                              for (Vehicle vehicle1
-                                                  in permit!.vehicles) {
-                                                vehicle1.index = permit!
-                                                    .vehicles
-                                                    .indexOf(vehicle1);
-                                              }
-                                              orderedVehicleIds = permit!
-                                                  .vehicles
-                                                  .map((vehicle) =>
-                                                      vehicle.id.toString())
-                                                  .toList();
-                                              await Functions.setOrUpdateFirestore(
-                                                  'permitIdToOrderedVehicleIds',
-                                                  'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
-                                                  orderedVehicleIds);
-                                              await Instances.prefs
-                                                  .setStringList(
-                                                      permit!.id.toString(),
-                                                      orderedVehicleIds);
-                                              if (mounted) {
-                                                setState(() {
-                                                  if (selectedIndex ==
-                                                      oldIndex) {
-                                                    selectedIndex = newIndex;
-                                                  }
-                                                });
-                                              }
-                                            },
-                                            footer: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 4),
-                                              child: Center(
-                                                child: ElevatedButton(
-                                                  onPressed: () async {
-                                                    Vehicle.sortByIsFavourite(
-                                                        permit!.vehicles);
-                                                    await Functions.setOrUpdateFirestore(
-                                                        'permitIdToOrderedVehicleIds',
-                                                        'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
-                                                        permit!.vehicles
-                                                            .map((vehicle) =>
-                                                                vehicle.id
-                                                                    .toString())
-                                                            .toList());
-
-                                                    Instances.prefs.remove(
-                                                        'orderedVehicleIds');
-                                                    setState(() {});
-                                                  },
-                                                  child: const Text(
-                                                      'Reset custom ordering'),
-                                                ),
-                                              ),
-                                            ),
-                                            children: [
-                                              for (Vehicle vehicle
-                                                  in permit!.vehicles)
-                                                Animate(
-                                                  key: ValueKey(vehicle),
-                                                  effects: const [
-                                                    SlideEffect(),
-                                                  ],
-                                                  child: interactiveVehicleCard(
-                                                      vehicle,
-                                                      permit!.vehicles
-                                                          .indexOf(vehicle)),
-                                                ),
-                                            ],
-                                          )
-                                        : ListView.builder(
-                                            itemCount: permit!.vehicles.length,
-                                            itemBuilder: (content, index) {
-                                              return Animate(
-                                                effects: const [
-                                                  SlideEffect(),
-                                                ],
-                                                child: interactiveVehicleCard(
-                                                    permit!.vehicles[index],
-                                                    index),
-                                              );
-                                            },
-                                          ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: ListView.builder(
-                                    itemCount: miniPermits.length,
-                                    itemBuilder: (content, index) {
-                                      return Animate(
-                                        effects: const [SlideEffect()],
-                                        child: GestureDetector(
-                                          child: MiniPermitCard(
-                                            miniPermit: miniPermits[index],
-                                            dateFormat: Variables.dateFormat,
-                                          ),
-                                          onTap: () async {
-                                            setState(() {
-                                              Variables.isLoading = true;
-                                            });
-                                            orderedVehicleIds = Variables
-                                                    .isReorderable
-                                                ? Instances.prefs.getStringList(
-                                                        miniPermits[index]
-                                                            .id
-                                                            .toString()) ??
-                                                    []
-                                                : [];
-                                            permit = await Api().getPermit(
-                                              miniPermits[index].id.toString(),
-                                              Variables.isReorderable,
-                                            );
-                                            if (permit == null ||
-                                                permit!.vehicles.isNotEmpty) {
-                                              try {
-                                                activeVehicle = permit!.vehicles
-                                                    .firstWhere((vehicle) =>
-                                                        vehicle.isActive ==
-                                                        true);
-                                              } catch (e) {
-                                                activeVehicle = null;
-                                              }
-                                            }
-                                            miniPermits.clear();
-                                            if (mounted) {
-                                              setState(() {
-                                                firstPass = false;
-                                                Variables.isLoading = false;
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-      ),
+                              ),
+          )),
     );
   }
 }
