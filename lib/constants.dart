@@ -13,3 +13,7 @@ class Colours {
   static const red = Color.fromARGB(255, 255, 0, 0);
   static const deepBlue = Color.fromARGB(255, 0, 0, 44);
 }
+
+class Durations {
+  static const Duration buffer = Duration(minutes: 30, seconds: 10);
+}
