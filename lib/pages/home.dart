@@ -44,13 +44,9 @@ class HomeState extends State<Home> {
       setState(() {
         Variables.isLoading = true;
       });
-      await Instances.googleSignIn.isSignedIn().then(
-        (bool value) async {
-          if (!value) {
-            await Functions.silentSignIn();
-          }
-        },
-      );
+      if (!await Instances.googleSignIn.isSignedIn()) {
+        await Functions.silentSignIn();
+      }
       Duration buffer = const Duration(minutes: 30, seconds: 10);
       DateTime expiry = Variables.tokens.isNotEmpty
           ? DateTime.parse(Variables.tokens.last)
@@ -225,6 +221,9 @@ class HomeState extends State<Home> {
               child: IconButton(
                   icon: const Icon(Icons.settings),
                   onPressed: () async {
+                    permit = null;
+                    miniPermits.clear();
+                    firstPass = true;
                     await Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => const Base(page: Settings())));
                     getData();
