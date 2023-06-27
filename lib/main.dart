@@ -10,6 +10,7 @@ import 'constants.dart';
 import 'functions.dart';
 import 'instances.dart';
 import 'pages/base.dart';
+import 'pages/home.dart';
 import 'variables.dart';
 
 Future<void> main() async {
@@ -62,7 +63,7 @@ class ParkingPermitsApp extends StatelessWidget {
           progressIndicatorTheme:
               const ProgressIndicatorThemeData(color: Colours.lightBlue),
           listTileTheme: const ListTileThemeData(tileColor: Colours.darkGray)),
-      home: const Base(),
+      home: const Base(page: Home()),
     );
   }
 }
