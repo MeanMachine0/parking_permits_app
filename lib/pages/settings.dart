@@ -8,6 +8,8 @@ import 'package:parking_permits_app/variables.dart';
 
 import '../functions.dart';
 import '../instances.dart';
+import 'base.dart';
+import 'login.dart';
 
 class Settings extends StatefulWidget {
   const Settings({Key? key}) : super(key: key);
@@ -91,9 +93,7 @@ class SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: Variables.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Animate(
@@ -178,10 +178,43 @@ class SettingsState extends State<Settings> {
                   ),
                   Text(Variables.parkingEmail != null
                       ? 'Logged in as ${Variables.parkingEmail}'
-                      : 'Not logged in to parking account'),
+                      : 'Not logged in to permit account'),
                   if (Instances.user != null)
                     Text('Signed in to Google as ${Instances.user!.email}'),
                   const SizedBox(height: 6),
+                  ElevatedButton(
+                    onPressed: () async {
+                      setState(() {});
+                      if (Variables.tokens.isEmpty) {
+                        Variables.isLoading = true;
+                        bool success = await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const Base(page: Login()))) ??
+                            false;
+                        if (success && mounted) {
+                          setState(() {
+                            Variables.isLoading1 = true;
+                          });
+                          getData();
+                        } else {
+                          setState(() {
+                            Variables.isLoading = false;
+                          });
+                        }
+                      } else {
+                        Variables.tokens.clear();
+                        Variables.parkingEmail = null;
+                        await Instances.prefs.remove('tokens');
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      }
+                    },
+                    child: Text(Variables.tokens.isEmpty
+                        ? 'Login to Permit Account'
+                        : 'Logout of Permit Account'),
+                  ),
                   ElevatedButton(
                     onPressed: () async {
                       bool isNewUser = false;
