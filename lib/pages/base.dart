@@ -3,14 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:parking_permits_app/variables.dart';
-
-import '../constants.dart';
-import 'home.dart';
-import 'settings.dart';
 
 class Base extends StatefulWidget {
-  const Base({Key? key}) : super(key: key);
+  const Base({super.key, required Widget page}) : _page = page;
+
+  final Widget _page;
 
   @override
   BaseState createState() => BaseState();
@@ -19,11 +16,6 @@ class Base extends StatefulWidget {
 class BaseState extends State<Base> {
   late BannerAd bannerAd;
   bool bannerAdHasLoaded = false;
-  int _selectedIndex = 0;
-  static const List<Widget> pages = <Widget>[
-    Home(),
-    Settings(),
-  ];
 
   @override
   void initState() {
@@ -55,37 +47,14 @@ class BaseState extends State<Base> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages.elementAt(_selectedIndex),
+      body: widget._page,
       bottomNavigationBar: bannerAdHasLoaded
           ? SizedBox(
               height: bannerAd.size.height.toDouble(),
               width: bannerAd.size.width.toDouble(),
               child: AdWidget(ad: bannerAd),
             )
-          : NavigationBar(
-              backgroundColor: Colours.deepDarkGray,
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) {
-                setState(() {
-                  if ((!Variables.isLoading && !Variables.isLoading1) |
-                      Variables.notSilentlySigningIn) {
-                    _selectedIndex = index;
-                  }
-                });
-              },
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: 'Settings',
-                ),
-              ],
-            ),
+          : null,
     );
   }
 }
