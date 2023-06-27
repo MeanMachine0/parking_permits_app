@@ -10,7 +10,9 @@ import '../models/permit_model.dart';
 import '../variables.dart';
 import '../widgets/mini_permit_card.dart';
 import '../widgets/vehicle_card.dart';
+import 'base.dart';
 import 'login.dart';
+import 'settings.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -220,35 +222,13 @@ class HomeState extends State<Home> {
           actions: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ElevatedButton(
-                onPressed: () async {
-                  setState(() {
-                    Variables.isLoading = true;
-                  });
-                  if (Variables.tokens.isEmpty) {
-                    bool success = await Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const Login())) ??
-                        false;
-                    if (success && mounted) {
-                      setState(() {
-                        Variables.isLoading1 = true;
-                      });
-                      getData();
-                    } else {
-                      setState(() {
-                        Variables.isLoading = false;
-                      });
-                    }
-                  } else {
-                    logout();
-                    if (mounted) {
-                      Variables.isLoading = false;
-                      setState(() {});
-                    }
-                  }
-                },
-                child: Text(Variables.tokens.isEmpty ? 'Login' : 'Logout'),
-              ),
+              child: IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const Base(page: Settings())));
+                    getData();
+                  }),
             ),
           ],
         ),
@@ -260,11 +240,49 @@ class HomeState extends State<Home> {
                       FadeEffect(),
                     ],
                     child: Center(
-                      child: Text(
-                        message ??
-                            (Variables.tokens.isEmpty
-                                ? 'You are not logged in.'
-                                : 'Logged in as ${Variables.parkingEmail}'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            message ??
+                                (Variables.tokens.isEmpty
+                                    ? 'Not logged in to permit account'
+                                    : 'Logged in as ${Variables.parkingEmail}'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              setState(() {
+                                Variables.isLoading = true;
+                              });
+                              if (Variables.tokens.isEmpty) {
+                                bool success = await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const Base(page: Login()))) ??
+                                    false;
+                                if (success && mounted) {
+                                  setState(() {
+                                    Variables.isLoading1 = true;
+                                  });
+                                  getData();
+                                } else {
+                                  setState(() {
+                                    Variables.isLoading = false;
+                                  });
+                                }
+                              } else {
+                                logout();
+                                Variables.isLoading = false;
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                              }
+                            },
+                            child: Text(Variables.tokens.isEmpty
+                                ? 'Login to Permit Account'
+                                : 'Logout of Permit Account'),
+                          ),
+                        ],
                       ),
                     ),
                   )
