@@ -64,7 +64,8 @@ class Functions {
         }
         if (docData['preferences']['dateFormat'] != null) {
           Variables.dateFormat = docData['preferences']['dateFormat'];
-          await Instances.prefs.setString('dateFormat', Variables.dateFormat);
+          await Instances.prefs
+              .setString('preferences.dateFormat', Variables.dateFormat);
         }
       }
     }
@@ -90,9 +91,10 @@ class Functions {
     late List permitData;
     List<MiniPermitModel> miniPermits = [];
     List<Vehicle> vehicles = [];
-    List<Map<String, List<String>>> orderedVehicleIds = [];
+    List<Map<String, List<String>>> orderedVehicleVrms = [];
     late DocumentSnapshot doc;
-    List<String> vehicleIds = [];
+    List<String> vehicleVrms = [];
+    List<String>? permitOrderedVehicleVrms, favourites;
     Variables.isSyncing = true;
     try {
       doc = await Instances.docRef!.get();
@@ -113,57 +115,63 @@ class Functions {
           return false;
         } else if (permitData.isNotEmpty) {
           miniPermits = permitData as List<MiniPermitModel>;
+          await Instances.docRef!.set({'permits': {}});
+          favourites = [];
           for (MiniPermitModel miniPermit in miniPermits) {
             await Api()
                 .getPermit(miniPermit.id.toString(), false)
-                .then((permit) {
+                .then((permit) async {
               if (permit != null) {
-                vehicles.addAll(permit.vehicles);
-                List<String>? permitOrderedVehicleIds;
-                permitOrderedVehicleIds =
-                    Instances.prefs.getStringList(permit.id.toString());
-                if (permitOrderedVehicleIds != null) {
+                List<Vehicle> permitVehicles = permit.vehicles;
+                vehicles.addAll(permitVehicles);
+                for (Vehicle vehicle in permitVehicles) {
+                  if (vehicle.isFavourite) {
+                    favourites!.add(vehicle.vrm);
+                  }
+                }
+                await Instances.docRef!
+                    .update({'permits.${permit.id}.favourites': favourites});
+                favourites!.clear();
+                permitOrderedVehicleVrms = Instances.prefs
+                    .getStringList('permits.${permit.id}.orderedVehicleVrms');
+                if (permitOrderedVehicleVrms != null) {
                   Map<String, List<String>> idMap = {
-                    'permitIdToOrderedVehicleIds.${permit.id.toString()}':
-                        permitOrderedVehicleIds
+                    'permits.${permit.id}.orderedVehicleVrms':
+                        permitOrderedVehicleVrms!
                   };
-                  orderedVehicleIds.add(idMap);
+                  orderedVehicleVrms.add(idMap);
                 }
               }
             });
           }
         }
-        await Instances.docRef!.set({'preferences': {}});
         Instances.docRef!.update({
           'preferences.useBioOrLocalAuth':
-              Instances.prefs.getBool('useBioOrLocalAuth') ??
+              Instances.prefs.getBool('preferences.useBioOrLocalAuth') ??
                   Variables.bioOrLocalAuthIsSupported
         });
         Instances.docRef!.update({
           'preferences.useDetailedView':
-              Instances.prefs.getBool('useDetailedView') ?? false
+              Instances.prefs.getBool('preferences.useDetailedView') ?? false
         });
         Instances.docRef!.update({
           'preferences.isReorderable':
-              Instances.prefs.getBool('isReorderable') ?? false
+              Instances.prefs.getBool('preferences.isReorderable') ?? false
         });
         Instances.docRef!.update({
           'preferences.dateFormat':
-              Instances.prefs.getString('dateFormat') ?? 'dd/MM/yyyy'
+              Instances.prefs.getString('preferences.dateFormat') ??
+                  'dd/MM/yyyy'
         });
-        if (orderedVehicleIds.isNotEmpty) {
-          for (Map<String, List<String>> idMap in orderedVehicleIds) {
+        if (orderedVehicleVrms.isNotEmpty) {
+          for (Map<String, List<String>> idMap in orderedVehicleVrms) {
             await Instances.docRef!.update(idMap);
           }
         }
         for (Vehicle vehicle in vehicles) {
-          if (vehicle.isFavourite) {
-            await Instances.docRef!
-                .update({'vehicles.${vehicle.id}.isFavourite': true});
-          }
           if (vehicle.note != null && vehicle.note != '') {
             await Instances.docRef!
-                .update({'vehicles.${vehicle.id}.note': vehicle.note});
+                .update({'vehicles.${vehicle.vrm}.note': vehicle.note});
           }
         }
       } else {
@@ -180,28 +188,34 @@ class Functions {
           await Instances.prefs.setString('dateFormat',
               docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy');
         }
-        if (docData.containsKey('permitIdToOrderedVehicleIds')) {
+        if (docData.containsKey('permits')) {
           Map<String, dynamic> idMap =
-              docData['permitIdToOrderedVehicleIds'] as Map<String, dynamic>;
+              docData['permits'] as Map<String, dynamic>;
           List<String> permitIds = idMap.keys.toList();
           for (String permitId in permitIds) {
-            vehicleIds = (idMap[permitId] as List)
-                .map((vehicleId) => vehicleId.toString())
-                .toList();
-            await Instances.prefs.setStringList(permitId, vehicleIds);
+            if (idMap[permitId].containsKey('orderedVehicleVrms')) {
+              permitOrderedVehicleVrms =
+                  (idMap[permitId]['orderedVehicleVrms'] as List)
+                      .map((vehicleId) => vehicleId.toString())
+                      .toList();
+              await Instances.prefs.setStringList(
+                  'permits.$permitId.orderedVehicleVrms',
+                  permitOrderedVehicleVrms);
+            }
+            favourites = idMap[permitId][favourites];
+            if (favourites != null) {
+              await Instances.prefs
+                  .setStringList('permits.$permitId.favourites', favourites);
+            }
           }
         }
         if (docData.containsKey('vehicles')) {
           Map<String, dynamic> vehicleMap = docData['vehicles'];
-          vehicleIds = vehicleMap.keys.toList();
-          for (String vehicleId in vehicleIds) {
-            String? note = vehicleMap[vehicleId]['note']?.toString();
+          vehicleVrms = vehicleMap.keys.toList();
+          for (String vrm in vehicleVrms) {
+            String? note = vehicleMap[vrm]['note']?.toString();
             if (note != null) {
-              await Instances.prefs.setString('${vehicleId}Note', note);
-            }
-            bool? isFavourite = vehicleMap[vehicleId]?['isFavourite'] as bool?;
-            if (isFavourite != null && isFavourite) {
-              await Instances.prefs.setBool('${vehicleId}IsFavourite', true);
+              await Instances.prefs.setString('vehicles.$vrm.note', note);
             }
           }
         }

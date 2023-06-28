@@ -289,25 +289,27 @@ class Vehicle {
 
   static Future<void> sortByCustom(
       List<Vehicle> vehicles, String permitId, DocumentSnapshot? doc) async {
-    late List orderedVehicleIds;
+    late List orderedVehicleVrms;
     Map<String, dynamic>? docData;
     if (doc != null && doc.exists) {
       docData = doc.data() as Map<String, dynamic>;
-      orderedVehicleIds = docData.containsKey('permitIdToOrderedVehicleIds')
-          ? docData['permitIdToOrderedVehicleIds'][permitId] ??
-              Instances.prefs.getStringList(permitId) ??
-              []
-          : Instances.prefs.getStringList(permitId) ?? [];
+      orderedVehicleVrms = docData['permits']?[permitId]
+              ?['orderedVehicleVrms'] ??
+          Instances.prefs
+              .getStringList('permits.$permitId.orderedVehicleVrms') ??
+          [];
     } else {
-      orderedVehicleIds = Instances.prefs.getStringList(permitId) ?? [];
+      orderedVehicleVrms = Instances.prefs
+              .getStringList('permits.$permitId.orderedVehicleVrms') ??
+          [];
     }
-    if (orderedVehicleIds.isEmpty) return;
-    Map<int, int> orderedVehicleIdsToIndices = {};
-    for (int i = 0; i < orderedVehicleIds.length; i++) {
-      orderedVehicleIdsToIndices[int.parse(orderedVehicleIds[i])] = i;
+    if (orderedVehicleVrms.isEmpty) return;
+    Map<String, int> orderedVehicleVrmsToIndices = {};
+    for (int i = 0; i < orderedVehicleVrms.length; i++) {
+      orderedVehicleVrmsToIndices[orderedVehicleVrms[i]] = i;
     }
     for (Vehicle vehicle in vehicles) {
-      vehicle.index = orderedVehicleIdsToIndices[vehicle.id];
+      vehicle.index = orderedVehicleVrmsToIndices[vehicle.vrm];
     }
     vehicles.sort((a, b) {
       return a.index!.compareTo(b.index!);

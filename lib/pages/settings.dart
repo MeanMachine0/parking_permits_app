@@ -111,7 +111,8 @@ class SettingsState extends State<Settings> {
                           await Functions.setOrUpdateFirestore('preferences',
                               'preferences.useBioOrLocalAuth', newValue!);
                         }
-                        Instances.prefs.setBool('useBioOrLocalAuth', newValue!);
+                        Instances.prefs.setBool(
+                            'preferences.useBioOrLocalAuth', newValue!);
                         setState(() {
                           Variables.useBioOrLocalAuth = newValue;
                         });
@@ -125,7 +126,8 @@ class SettingsState extends State<Settings> {
                         await Functions.setOrUpdateFirestore('preferences',
                             'preferences.useDetailedView', newValue!);
                       }
-                      Instances.prefs.setBool('useDetailedView', newValue!);
+                      Instances.prefs
+                          .setBool('preferences.useDetailedView', newValue!);
                       setState(() {
                         Variables.useDetailedView = newValue;
                       });
@@ -139,7 +141,8 @@ class SettingsState extends State<Settings> {
                         await Functions.setOrUpdateFirestore('preferences',
                             'preferences.isReorderable', newValue!);
                       }
-                      Instances.prefs.setBool('isReorderable', newValue!);
+                      Instances.prefs
+                          .setBool('preferences.isReorderable', newValue!);
                       setState(() {
                         Variables.isReorderable = newValue;
                       });

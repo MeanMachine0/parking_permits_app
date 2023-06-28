@@ -157,6 +157,7 @@ class Api {
           'Permits.Account.Common.Request.GetPermitRequest, Permits.Account.Common',
       'id': permitId
     };
+    List<dynamic>? favourites;
     try {
       if (Instances.docRef != null) {
         doc = await Instances.docRef!.get();
@@ -172,24 +173,35 @@ class Api {
           Instances.docRef != null &&
           doc!.exists &&
           docData!.containsKey('vehicles');
+      favourites = docData?['permits']?[permitId]?['favourites'] ??
+          Instances.prefs.getStringList('permits.$permitId.favourites') ??
+          [];
       for (Vehicle vehicle in permit.vehicles) {
         if (useFirestoreVehicles) {
-          vehicle.note = doc['vehicles']?[vehicle.id.toString()]?['note'];
+          vehicle.note = docData['vehicles']?[vehicle.vrm]?['note'];
           if (vehicle.note != null) {
-            await Instances.prefs.setString('${vehicle.id}Note', vehicle.note!);
+            await Instances.prefs
+                .setString('vehicles.${vehicle.vrm}.note', vehicle.note!);
           }
-          vehicle.isFavourite =
-              doc['vehicles']?[vehicle.id.toString()]?['isFavourite'] ?? false;
-          await Instances.prefs
-              .setBool('${vehicle.id}IsFavourite', vehicle.isFavourite);
+          if (favourites != null && favourites.isNotEmpty) {
+            vehicle.isFavourite = favourites.contains(vehicle.vrm);
+          } else {
+            vehicle.isFavourite = false;
+          }
         } else {
-          vehicle.note = Instances.prefs.getString('${vehicle.id}Note');
-          vehicle.isFavourite =
-              Instances.prefs.getBool('${vehicle.id}IsFavourite') ?? false;
+          vehicle.note =
+              Instances.prefs.getString('vehicles.${vehicle.vrm}.note');
+          if (favourites != null && favourites.isNotEmpty) {
+            vehicle.isFavourite = favourites.contains(vehicle.vrm);
+          } else {
+            vehicle.isFavourite = false;
+          }
         }
       }
       if (customSort &&
-          Instances.prefs.getStringList(permitId.toString()) != null) {
+          Instances.prefs
+                  .getStringList('permits.$permitId.orderedVehicleVrms') !=
+              null) {
         await Vehicle.sortByCustom(permit.vehicles, permitId, doc);
       } else {
         Vehicle.sortByIsFavourite(permit.vehicles);

@@ -24,7 +24,7 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   bool failure = false, firstPass = true;
   bool? addVehicleFailure, wasUsingDetailedView;
-  List<String> orderedVehicleIds = [];
+  List<String> orderedVehicleVrms = [];
   late List permitData;
   PermitModel? permit;
   List<MiniPermitModel> miniPermits = [];
@@ -39,7 +39,7 @@ class HomeState extends State<Home> {
     getData();
   }
 
-  void getData() async {
+  Future<void> getData() async {
     if (mounted) {
       setState(() {
         Variables.isLoading = true;
@@ -145,8 +145,8 @@ class HomeState extends State<Home> {
 
   void updateVehicleNoteCallback(Vehicle vehicle, String newNote) async {
     await Functions.setOrUpdateFirestore(
-        'vehicles', 'vehicles.${vehicle.id}.note', newNote);
-    await Instances.prefs.setString('${vehicle.id}Note', newNote);
+        'vehicles', 'vehicles.${vehicle.vrm}.note', newNote);
+    await Instances.prefs.setString('vehicles.${vehicle.vrm}.note', newNote);
     setState(() {
       vehicle.note = newNote;
     });
@@ -191,10 +191,15 @@ class HomeState extends State<Home> {
   void toggleVehicleIsFavouriteCallback(
       Vehicle vehicle, bool isExpanded) async {
     bool isFavourite = !vehicle.isFavourite;
-    await Functions.setOrUpdateFirestore(
-        'vehicles', 'vehicles.${vehicle.id}.isFavourite', isFavourite);
-    await Instances.prefs.setBool('${vehicle.id}IsFavourite', isFavourite);
     vehicle.isFavourite = isFavourite;
+    List<String> favourites = [];
+    for (Vehicle vehicle1 in permit!.vehicles) {
+      if (vehicle1.isFavourite) favourites.add(vehicle1.vrm);
+    }
+    await Functions.setOrUpdateFirestore(
+        'vehicles', 'permits.${permit!.id}.favourites', favourites);
+    await Instances.prefs
+        .setStringList('permits.${permit!.id}.favourites', favourites);
     if (!Variables.isReorderable) Vehicle.sortByIsFavourite(permit!.vehicles);
     if (isExpanded) selectedIndex = permit!.vehicles.indexOf(vehicle);
     setState(() {});
@@ -273,18 +278,28 @@ class HomeState extends State<Home> {
                 child: IconButton(
                     icon: const Icon(Icons.settings),
                     onPressed: () async {
+                      bool wasLoggedIn = Variables.tokens.isNotEmpty;
                       wasUsingDetailedView = Variables.useDetailedView;
                       await Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const Base(page: Settings())));
-                      if (mounted) {
-                        setState(() {
-                          Variables.isLoading = true;
-                        });
-                        await refresh();
+                      if (wasLoggedIn != Variables.tokens.isNotEmpty) {
+                        selectedIndex = -1;
+                        permit = null;
+                        addVehicleFailure = null;
+                        firstPass = true;
+                        miniPermits.clear();
+                        await getData();
+                      } else {
                         if (mounted) {
                           setState(() {
-                            Variables.isLoading = false;
+                            Variables.isLoading = true;
                           });
+                          await refresh();
+                          if (mounted) {
+                            setState(() {
+                              Variables.isLoading = false;
+                            });
+                          }
                         }
                       }
                     }),
@@ -476,26 +491,26 @@ class HomeState extends State<Home> {
                                                     permit!.vehicles.insert(
                                                         newIndex, vehicle);
                                                   });
-
                                                   for (Vehicle vehicle1
                                                       in permit!.vehicles) {
                                                     vehicle1.index = permit!
                                                         .vehicles
                                                         .indexOf(vehicle1);
                                                   }
-                                                  orderedVehicleIds = permit!
+                                                  orderedVehicleVrms = permit!
                                                       .vehicles
                                                       .map((vehicle) =>
-                                                          vehicle.id.toString())
+                                                          vehicle.vrm)
                                                       .toList();
-                                                  await Functions.setOrUpdateFirestore(
-                                                      'permitIdToOrderedVehicleIds',
-                                                      'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
-                                                      orderedVehicleIds);
+                                                  await Functions
+                                                      .setOrUpdateFirestore(
+                                                          'permits',
+                                                          'permits.${permit!.id}.orderedVehicleVrms',
+                                                          orderedVehicleVrms);
                                                   await Instances.prefs
                                                       .setStringList(
-                                                          permit!.id.toString(),
-                                                          orderedVehicleIds);
+                                                          'permits.${permit!.id}.orderedVehicleVrms',
+                                                          orderedVehicleVrms);
                                                   if (mounted) {
                                                     setState(() {
                                                       if (selectedIndex ==
@@ -516,14 +531,15 @@ class HomeState extends State<Home> {
                                                             .sortByIsFavourite(
                                                                 permit!
                                                                     .vehicles);
-                                                        await Functions.setOrUpdateFirestore(
-                                                            'permitIdToOrderedVehicleIds',
-                                                            'permitIdToOrderedVehicleIds.${permit!.id.toString()}',
-                                                            permit!.vehicles
-                                                                .map((vehicle) =>
-                                                                    vehicle.id
-                                                                        .toString())
-                                                                .toList());
+                                                        await Functions
+                                                            .setOrUpdateFirestore(
+                                                                'permits',
+                                                                'permits.${permit!.id}.orderedVehicleVrms',
+                                                                permit!.vehicles
+                                                                    .map((vehicle) =>
+                                                                        vehicle
+                                                                            .vrm)
+                                                                    .toList());
 
                                                         Instances.prefs.remove(
                                                             'orderedVehicleIds');
@@ -593,14 +609,10 @@ class HomeState extends State<Home> {
                                                 setState(() {
                                                   Variables.isLoading = true;
                                                 });
-                                                orderedVehicleIds = Variables
+                                                orderedVehicleVrms = Variables
                                                         .isReorderable
-                                                    ? Instances.prefs
-                                                            .getStringList(
-                                                                miniPermits[
-                                                                        index]
-                                                                    .id
-                                                                    .toString()) ??
+                                                    ? Instances.prefs.getStringList(
+                                                            'permits.${miniPermits[index].id}.orderedVehicleVrms') ??
                                                         []
                                                     : [];
                                                 permit = await Api().getPermit(
