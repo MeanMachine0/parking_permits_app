@@ -23,7 +23,7 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   bool failure = false, firstPass = true;
-  bool? addVehicleFailure;
+  bool? addVehicleFailure, wasUsingDetailedView;
   List<String> orderedVehicleIds = [];
   late List permitData;
   PermitModel? permit;
@@ -83,7 +83,7 @@ class HomeState extends State<Home> {
       await logout();
       message = "Your session has expired; please login again.";
     }
-    if (permit != null) {
+    if (permit != null && wasUsingDetailedView! == Variables.useDetailedView) {
       permit =
           await Api().getPermit(permit!.id.toString(), Variables.isReorderable);
       if (permit != null) {
@@ -91,11 +91,20 @@ class HomeState extends State<Home> {
         activeVehicle =
             permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
       }
-    } else if (miniPermits.isNotEmpty) {
+    } else if (Variables.useDetailedView) {
+      selectedIndex = -1;
+      permit = null;
+      addVehicleFailure = null;
+      firstPass = true;
       miniPermits = await Api().getMiniPermits(
         !Variables.useDetailedView,
         Variables.isReorderable,
       ) as List<MiniPermitModel>;
+    } else {
+      selectedIndex = -1;
+      addVehicleFailure = null;
+      firstPass = true;
+      permit = (await Api().getMiniPermits(true, Variables.isReorderable))[1];
     }
     setState(() {});
   }
@@ -234,7 +243,9 @@ class HomeState extends State<Home> {
                             '${permit?.address?.number} ${permit?.address?.street}')
                         : permit?.address?.pafAddress?.buildingName != null
                             ? Text(permit!.address!.pafAddress!.buildingName!)
-                            : const Text('Home'),
+                            : permit != null
+                                ? Text(permit!.permitNumber)
+                                : const Text('Home'),
             scrolledUnderElevation: 0,
             actions: [
               Padding(
@@ -242,12 +253,20 @@ class HomeState extends State<Home> {
                 child: IconButton(
                     icon: const Icon(Icons.settings),
                     onPressed: () async {
-                      permit = null;
-                      miniPermits.clear();
-                      firstPass = true;
+                      wasUsingDetailedView = Variables.useDetailedView;
                       await Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const Base(page: Settings())));
-                      getData();
+                      if (mounted) {
+                        setState(() {
+                          Variables.isLoading = true;
+                        });
+                        await refresh();
+                        if (mounted) {
+                          setState(() {
+                            Variables.isLoading = false;
+                          });
+                        }
+                      }
                     }),
               ),
             ],
