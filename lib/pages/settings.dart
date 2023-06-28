@@ -167,8 +167,8 @@ class SettingsState extends State<Settings> {
                             await Functions.setOrUpdateFirestore('preferences',
                                 'preferences.dateFormat', newDateFormat!);
                           }
-                          await Instances.prefs
-                              .setString('dateFormat', newDateFormat!);
+                          await Instances.prefs.setString(
+                              'preferences.dateFormat', newDateFormat!);
                           setState(() {
                             Variables.dateFormat = newDateFormat;
                           });
