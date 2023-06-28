@@ -82,29 +82,49 @@ class HomeState extends State<Home> {
     if (DateTime.now().add(Durations.buffer).toUtc().isAfter(expiry)) {
       await logout();
       message = "Your session has expired; please login again.";
-    }
-    if (permit != null && wasUsingDetailedView! == Variables.useDetailedView) {
+    } else if (permit != null &&
+        wasUsingDetailedView! == Variables.useDetailedView) {
       permit =
           await Api().getPermit(permit!.id.toString(), Variables.isReorderable);
       if (permit != null) {
         activeVehicle?.isActive = false;
         activeVehicle =
             permit!.vehicles.firstWhere((vehicle) => vehicle.isActive == true);
+      } else {
+        message = "Failed to fetch permit details.";
       }
     } else if (Variables.useDetailedView) {
       selectedIndex = -1;
       permit = null;
       addVehicleFailure = null;
       firstPass = true;
-      miniPermits = await Api().getMiniPermits(
+      await Api()
+          .getMiniPermits(
         !Variables.useDetailedView,
         Variables.isReorderable,
-      ) as List<MiniPermitModel>;
+      )
+          .then(
+        (response) {
+          if (response[0] == false) {
+            message = "Failed to fetch permits' details.";
+          } else {
+            miniPermits = response as List<MiniPermitModel>;
+          }
+        },
+      );
     } else {
       selectedIndex = -1;
       addVehicleFailure = null;
       firstPass = true;
-      permit = (await Api().getMiniPermits(true, Variables.isReorderable))[1];
+      await Api().getMiniPermits(true, Variables.isReorderable).then(
+        (response) {
+          if (response[0] == false) {
+            failure = true;
+          } else {
+            permit = response[1];
+          }
+        },
+      );
     }
     setState(() {});
   }
