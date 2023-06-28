@@ -178,14 +178,14 @@ class Functions {
         Map<String, dynamic> docData = doc.data() as Map<String, dynamic>;
         if (docData.containsKey('preferences')) {
           await Instances.prefs.setBool(
-              'useBioOrLocalAuth',
+              'preferences.useBioOrLocalAuth',
               docData['preferences']['useBioOrLocalAuth'] ??
                   Variables.bioOrLocalAuthIsSupported);
-          await Instances.prefs.setBool('useDetailedView',
+          await Instances.prefs.setBool('preferences.useDetailedView',
               docData['preferences']['useDetailedView'] ?? false);
-          await Instances.prefs.setBool('isReorderable',
+          await Instances.prefs.setBool('preferences.isReorderable',
               docData['preferences']['isReorderable'] ?? false);
-          await Instances.prefs.setString('dateFormat',
+          await Instances.prefs.setString('preferences.dateFormat',
               docData['preferences']['dateFormat'] ?? 'dd/MM/yyyy');
         }
         if (docData.containsKey('permits')) {
