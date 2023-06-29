@@ -96,6 +96,11 @@ class Functions {
     List<String> vehicleVrms = [];
     List<String>? permitOrderedVehicleVrms, favourites;
     Variables.isSyncing = true;
+    Set<String> prefsKeys = Instances.prefs.getKeys();
+    Map<String, dynamic> prefsBackup = {};
+    for (String key in prefsKeys) {
+      prefsBackup[key] = Instances.prefs.get(key);
+    }
     try {
       doc = await Instances.docRef!.get();
       if (overwriteFirestore) {
@@ -113,36 +118,42 @@ class Functions {
         } else if (permitData.isNotEmpty && permitData[0] == false) {
           Variables.isSyncing = false;
           return false;
-        } else if (permitData.isNotEmpty) {
-          miniPermits = permitData as List<MiniPermitModel>;
-          await Instances.docRef!.set({'permits': {}});
-          favourites = [];
-          for (MiniPermitModel miniPermit in miniPermits) {
-            await Api()
-                .getPermit(miniPermit.id.toString(), false)
-                .then((permit) async {
-              if (permit != null) {
-                List<Vehicle> permitVehicles = permit.vehicles;
-                vehicles.addAll(permitVehicles);
-                for (Vehicle vehicle in permitVehicles) {
-                  if (vehicle.isFavourite) {
-                    favourites!.add(vehicle.vrm);
+        } else {
+          await Instances.prefs.clear();
+          await Instances.prefs.setStringList('tokens', prefsBackup['tokens']);
+          await Instances.prefs
+              .setString('parkingEmail', prefsBackup['parkingEmail']);
+          if (permitData.isNotEmpty) {
+            miniPermits = permitData as List<MiniPermitModel>;
+            await Instances.docRef!.set({'permits': {}});
+            favourites = [];
+            for (MiniPermitModel miniPermit in miniPermits) {
+              await Api()
+                  .getPermit(miniPermit.id.toString(), false)
+                  .then((permit) async {
+                if (permit != null) {
+                  List<Vehicle> permitVehicles = permit.vehicles;
+                  vehicles.addAll(permitVehicles);
+                  for (Vehicle vehicle in permitVehicles) {
+                    if (vehicle.isFavourite) {
+                      favourites!.add(vehicle.vrm);
+                    }
+                  }
+                  await Instances.docRef!
+                      .update({'permits.${permit.id}.favourites': favourites});
+                  favourites!.clear();
+                  permitOrderedVehicleVrms = Instances.prefs
+                      .getStringList('permits.${permit.id}.orderedVehicleVrms');
+                  if (permitOrderedVehicleVrms != null) {
+                    Map<String, List<String>> idMap = {
+                      'permits.${permit.id}.orderedVehicleVrms':
+                          permitOrderedVehicleVrms!
+                    };
+                    orderedVehicleVrms.add(idMap);
                   }
                 }
-                await Instances.docRef!
-                    .update({'permits.${permit.id}.favourites': favourites});
-                favourites!.clear();
-                permitOrderedVehicleVrms = Instances.prefs
-                    .getStringList('permits.${permit.id}.orderedVehicleVrms');
-                if (permitOrderedVehicleVrms != null) {
-                  Map<String, List<String>> idMap = {
-                    'permits.${permit.id}.orderedVehicleVrms':
-                        permitOrderedVehicleVrms!
-                  };
-                  orderedVehicleVrms.add(idMap);
-                }
-              }
-            });
+              });
+            }
           }
         }
         Instances.docRef!.update({
@@ -221,6 +232,22 @@ class Functions {
         }
       }
     } catch (e) {
+      for (String key in prefsKeys) {
+        Type valueType = prefsBackup[key].runtimeType;
+        switch (valueType) {
+          case String:
+            await Instances.prefs.setString(key, prefsBackup[key]);
+            break;
+
+          case List<String>:
+            await Instances.prefs.setStringList(key, prefsBackup[key]);
+            break;
+
+          case bool:
+            await Instances.prefs.setBool(key, prefsBackup[key]);
+            break;
+        }
+      }
       Variables.isSyncing = false;
       return false;
     }
