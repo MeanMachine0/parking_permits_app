@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:parking_permits_app/variables.dart';
 
+import '../constants.dart';
 import '../functions.dart';
 import '../instances.dart';
 import 'base.dart';
@@ -25,6 +26,9 @@ class SettingsState extends State<Settings> {
     super.initState();
     getData();
   }
+
+  bool isSynced = false;
+  bool displaySyncStatus = false;
 
   void getData() async {
     if (mounted) {
@@ -211,6 +215,12 @@ class SettingsState extends State<Settings> {
                   const Expanded(
                     child: SizedBox(),
                   ),
+                  if (displaySyncStatus)
+                    isSynced
+                        ? const Text('Synced!',
+                            style: TextStyle(color: Colours.green))
+                        : const Text('Sync failed!',
+                            style: TextStyle(color: Colours.red)),
                   Text(Variables.parkingEmail != null
                       ? 'Logged in as ${Variables.parkingEmail}'
                       : 'Not logged in to permit account'),
@@ -253,7 +263,6 @@ class SettingsState extends State<Settings> {
                   ElevatedButton(
                     onPressed: () async {
                       bool isNewUser = false;
-                      bool success = false;
                       if (Instances.user == null) {
                         AuthCredential? authCredential =
                             await loginGoogle(pressed: true);
@@ -304,26 +313,27 @@ class SettingsState extends State<Settings> {
                               }
                             }
                             if (isNewUser || doc.data() == null) {
-                              success = await Functions.syncFirestore(
+                              isSynced = await Functions.syncFirestore(
                                   true, prefsFormatted);
                               Variables.isLoading = false;
                             } else if (const DeepCollectionEquality()
                                 .equals(prefsFormatted, docData)) {
-                              success = true;
+                              isSynced = true;
                             } else {
                               bool? overwriteFirestore = await openDataDialog();
                               if (overwriteFirestore != null) {
-                                success = await Functions.syncFirestore(
+                                isSynced = await Functions.syncFirestore(
                                     overwriteFirestore, prefsFormatted);
                               }
                             }
-                            if (success) {
+                            if (isSynced) {
                               await Functions.updateStatics();
                             } else {
                               await Functions.googleFirebaseSignOut();
                             }
                             if (mounted) {
                               setState(() {
+                                displaySyncStatus = true;
                                 Variables.isLoading = false;
                               });
                             }
