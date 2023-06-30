@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -60,7 +61,38 @@ class SettingsState extends State<Settings> {
     return authCredential;
   }
 
-  Future<bool?> openDialog() => showDialog<bool>(
+  Future<bool?> openDeleteUserDataDialog() => showDialog<bool>(
+      context: context,
+      builder: ((context) => AlertDialog(
+            title: const Text('Are you sure?'),
+            content: const Text(
+                'Doing so will delete all your local and cloud data.'),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(true);
+                      },
+                      child: const Text('Yes'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: const Text('No'),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          )));
+
+  Future<bool?> openDataDialog() => showDialog<bool>(
       context: context,
       builder: ((context) => AlertDialog(
               title: const Text('User data conflict!'),
@@ -240,14 +272,49 @@ class SettingsState extends State<Settings> {
                             Instances.docRef = FirebaseFirestore.instance
                                 .collection('users')
                                 .doc(Instances.user!.uid);
-                            if (isNewUser) {
-                              success = await Functions.syncFirestore(true);
+                            DocumentSnapshot doc =
+                                await Instances.docRef!.get();
+                            Map<String, dynamic>? docData =
+                                doc.data() as Map<String, dynamic>?;
+                            Set<String> prefsKeys = Instances.prefs.getKeys();
+                            prefsKeys.remove('tokens');
+                            prefsKeys.remove('parkingEmail');
+                            Map<String, dynamic> prefsFormatted = {};
+                            for (String key in prefsKeys) {
+                              if (key.contains('vehicles.')) {
+                                prefsFormatted.putIfAbsent(
+                                    'vehicles', () => {});
+                                prefsFormatted['vehicles']
+                                    [key.split('.')[1]] = {};
+                                prefsFormatted['vehicles'][key.split('.')[1]]
+                                    ['note'] = Instances.prefs.get(key);
+                              } else if (key.contains('preferences.')) {
+                                prefsFormatted.putIfAbsent(
+                                    'preferences', () => {});
+                                prefsFormatted['preferences']
+                                        [key.split('.')[1]] =
+                                    Instances.prefs.get(key);
+                              } else if (key.contains('permits.')) {
+                                prefsFormatted.putIfAbsent('permits', () => {});
+                                prefsFormatted['permits']
+                                    .putIfAbsent(key.split('.')[1], () => {});
+                                prefsFormatted['permits'][key.split('.')[1]]
+                                        [key.split('.')[2]] =
+                                    Instances.prefs.get(key);
+                              }
+                            }
+                            if (isNewUser || doc.data() == null) {
+                              success = await Functions.syncFirestore(
+                                  true, prefsFormatted);
                               Variables.isLoading = false;
+                            } else if (const DeepCollectionEquality()
+                                .equals(prefsFormatted, docData)) {
+                              success = true;
                             } else {
-                              bool? overwriteFirestore = await openDialog();
+                              bool? overwriteFirestore = await openDataDialog();
                               if (overwriteFirestore != null) {
                                 success = await Functions.syncFirestore(
-                                    overwriteFirestore);
+                                    overwriteFirestore, prefsFormatted);
                               }
                             }
                             if (success) {
@@ -289,20 +356,27 @@ class SettingsState extends State<Settings> {
                       setState(() {
                         Variables.isLoading = true;
                       });
-                      if (Instances.docRef != null) {
-                        await Instances.docRef!.delete();
-                        await Functions.googleFirebaseSignOut();
+                      bool? delete = await openDeleteUserDataDialog();
+                      if (delete != null && delete) {
+                        if (Instances.docRef != null) {
+                          await Instances.docRef!.delete();
+                          await Functions.googleFirebaseSignOut();
+                        }
+                        await Instances.prefs.clear();
+                        var secureStorage = const FlutterSecureStorage();
+                        await secureStorage.delete(key: 'password');
+                        setState(() {
+                          Variables.useDetailedView = false;
+                          Variables.isReorderable = false;
+                          Variables.tokens.clear();
+                          Variables.parkingEmail = null;
+                          Variables.isLoading = false;
+                        });
+                      } else {
+                        setState(() {
+                          Variables.isLoading = false;
+                        });
                       }
-                      await Instances.prefs.clear();
-                      var secureStorage = const FlutterSecureStorage();
-                      await secureStorage.delete(key: 'password');
-                      setState(() {
-                        Variables.useDetailedView = false;
-                        Variables.isReorderable = false;
-                        Variables.tokens.clear();
-                        Variables.parkingEmail = null;
-                        Variables.isLoading = false;
-                      });
                     },
                     child: const Text(
                       'Delete user data',
