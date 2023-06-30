@@ -101,9 +101,6 @@ class Functions {
       doc = await Instances.docRef!.get();
       if (overwriteFirestore) {
         await Instances.prefs.clear();
-        await Instances.prefs.setStringList('tokens', prefsBackup['tokens']);
-        await Instances.prefs
-            .setString('parkingEmail', prefsBackup['parkingEmail']);
         await Instances.docRef!.set({'permits': {}});
         Map? permits = prefsFormatted['permits'];
         if (permits != null) {
