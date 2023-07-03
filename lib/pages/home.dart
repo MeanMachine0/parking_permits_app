@@ -58,7 +58,7 @@ class HomeState extends State<Home> {
               Variables.isReorderable,
             );
       if (permitData.isEmpty && Variables.tokens.isNotEmpty) {
-        logout();
+        await logout();
         message = "Your session has expired; please login again.";
       } else if (permitData.isNotEmpty && permitData[0] == false) {
         failure = true;
@@ -80,8 +80,11 @@ class HomeState extends State<Home> {
 
   Future<void> refresh() async {
     if (DateTime.now().add(Durations.buffer).toUtc().isAfter(expiry)) {
+      bool wasLoggedIn = Variables.tokens.isNotEmpty;
       await logout();
-      message = "Your session has expired; please login again.";
+      if (wasLoggedIn) {
+        message = "Your session has expired; please login again.";
+      }
     } else if (permit != null &&
         wasUsingDetailedView! == Variables.useDetailedView) {
       permit =
@@ -288,6 +291,7 @@ class HomeState extends State<Home> {
                         addVehicleFailure = null;
                         firstPass = true;
                         miniPermits.clear();
+                        message = null;
                         await getData();
                       } else {
                         if (mounted) {
