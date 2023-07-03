@@ -15,5 +15,5 @@ class Colours {
 }
 
 class Durations {
-  static const Duration buffer = Duration(minutes: 30, seconds: 10);
+  static const Duration buffer = Duration(minutes: 31);
 }
