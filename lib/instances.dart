@@ -1,10 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api.dart';
+
 class Instances {
+  static Api api = Api();
+  static var secureStorage = const FlutterSecureStorage();
   static LocalAuthentication localAuth = LocalAuthentication();
   static GoogleSignIn googleSignIn = GoogleSignIn();
   static FirebaseAuth auth = FirebaseAuth.instance;
