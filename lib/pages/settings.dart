@@ -3,7 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:parking_permits_app/variables.dart';
 
@@ -373,8 +372,7 @@ class SettingsState extends State<Settings> {
                           await Functions.googleFirebaseSignOut();
                         }
                         await Instances.prefs.clear();
-                        var secureStorage = const FlutterSecureStorage();
-                        await secureStorage.delete(key: 'password');
+                        await Instances.secureStorage.delete(key: 'password');
                         setState(() {
                           Variables.useDetailedView = false;
                           Variables.isReorderable = false;

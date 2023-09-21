@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:parking_permits_app/api.dart';
 
 import '../constants.dart';
 import '../instances.dart';
@@ -43,8 +41,7 @@ class LoginState extends State<Login> {
               localizedReason: 'Login as ${Variables.parkingEmail}',
               options: const AuthenticationOptions());
           if (authenticated) {
-            var secureStorage = const FlutterSecureStorage();
-            password = await secureStorage.read(key: 'password');
+            password = await Instances.secureStorage.read(key: 'password');
             login(Variables.parkingEmail!, password!);
           }
         }
@@ -63,12 +60,11 @@ class LoginState extends State<Login> {
       setState(() {
         Variables.isLoading1 = true;
       });
-      await Api().login(email, password);
+      await Instances.api.login(email, password);
       if (Variables.tokens.isNotEmpty) {
         await Instances.prefs.setStringList('tokens', Variables.tokens);
         await Instances.prefs.setString('parkingEmail', email);
-        var secureStorage = const FlutterSecureStorage();
-        await secureStorage.write(key: 'password', value: password);
+        await Instances.secureStorage.write(key: 'password', value: password);
         // ignore: use_build_context_synchronously
         Navigator.pop(context, true);
       } else {
