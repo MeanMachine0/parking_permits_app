@@ -25,7 +25,9 @@ class BaseState extends State<Base> {
 
   void loadBannerAd() {
     bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-7932417226661520/6538405188',
+      adUnitId: Platform.isAndroid
+          ? 'ca-app-pub-7932417226661520/6538405188'
+          : 'ca-app-pub-7932417226661520/2424233495',
       request: const AdRequest(),
       size: AdSize.banner,
       listener: BannerAdListener(
