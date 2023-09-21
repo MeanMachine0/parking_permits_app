@@ -352,7 +352,7 @@ class HomeState extends State<Home> {
                                       });
                                     }
                                   } else {
-                                    logout();
+                                    await logout();
                                     Variables.isLoading = false;
                                     if (mounted) {
                                       setState(() {});
