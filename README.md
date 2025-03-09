@@ -1,20 +1,10 @@
 # parking_permits_app
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+## About
+- Used to assign parking permits to car registrations in Peterborough, (Peterborough exclusively as I do not have access to an account in another city and have not been able to test different locations).
+- Favourite particular registrations.
+- Write a note for each registration.
+- Create an account and backup your presets to firebase.
 
 ## Tim's mac notes 
 proxy_off
